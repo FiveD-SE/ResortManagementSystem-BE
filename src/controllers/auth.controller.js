@@ -1,6 +1,7 @@
 const httpStatus = require('http-status');
 const catchAsync = require('../utils/catchAsync');
 const { authService, userService, tokenService, emailService } = require('../services');
+const { auth, db } = require('../config/firebase');
 
 const register = catchAsync(async (req, res) => {
   const user = await userService.createUser(req.body);
@@ -12,7 +13,7 @@ const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const user = await authService.loginUserWithEmailAndPassword(email, password);
   const tokens = await tokenService.generateAuthTokens(user);
-  res.send({ user, tokens });
+  res.status(httpStatus.OK).send({ user, tokens });
 });
 
 const logout = catchAsync(async (req, res) => {
@@ -47,6 +48,38 @@ const verifyEmail = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const loginWithGoogle = catchAsync(async (req, res) => {
+  const { user } = req;
+  const tokens = await tokenService.generateAuthTokens(user);
+
+  let firebaseUser;
+  try {
+    firebaseUser = await auth.getUserByEmail(user.email);
+  } catch (error) {
+    if (error.code === 'auth/user-not-found') {
+      firebaseUser = await auth.createUser({
+        email: user.email,
+        password: user.password,
+      });
+
+      await db.ref(`users/${firebaseUser.uid}`).set({
+        role: 'user',
+        name: user.name,
+        email: user.email,
+        password: user.password,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      });
+    } else {
+      throw error;
+    }
+  }
+
+  await userService.updateUserById(user.id, { isEmailVerified: true });
+
+  res.redirect(`${process.env.CLIENT_URL}?token=${tokens.access.token}&refreshToken=${tokens.refresh.token}`);
+});
+
 module.exports = {
   register,
   login,
@@ -56,4 +89,5 @@ module.exports = {
   resetPassword,
   sendVerificationEmail,
   verifyEmail,
+  loginWithGoogle,
 };

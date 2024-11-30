@@ -35,6 +35,7 @@ if (error) {
 module.exports = {
   env: envVars.NODE_ENV,
   port: envVars.PORT,
+  host: envVars.HOST,
   mongoose: {
     url: envVars.MONGODB_URL + (envVars.NODE_ENV === 'test' ? '-test' : ''),
     options: {
@@ -60,5 +61,19 @@ module.exports = {
       },
     },
     from: envVars.EMAIL_FROM,
+  },
+  google: {
+    clientID: envVars.GOOGLE_CLIENT_ID,
+    clientSecret: envVars.GOOGLE_CLIENT_SECRET,
+    callbackUrl: envVars.GOOGLE_CALLBACK_URL,
+  },
+  firebase: {
+    apiKey: envVars.FIREBASE_API_KEY,
+    authDomain: envVars.FIREBASE_AUTH_DOMAIN,
+    projectId: envVars.FIREBASE_PROJECT_ID,
+    storageBucket: envVars.FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: envVars.FIREBASE_MESSAGING_SENDER_ID,
+    appId: envVars.FIREBASE_APP_ID,
+    measurementId: envVars.FIREBASE_MEASUREMENT_ID,
   },
 };
