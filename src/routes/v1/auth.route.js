@@ -1,4 +1,5 @@
 const express = require('express');
+const passport = require('passport');
 const validate = require('../../middlewares/validate');
 const authValidation = require('../../validations/auth.validation');
 const authController = require('../../controllers/auth.controller');
@@ -15,6 +16,13 @@ router.post('/reset-password', validate(authValidation.resetPassword), authContr
 router.post('/send-verification-email', auth(), authController.sendVerificationEmail);
 router.post('/verify-email', validate(authValidation.verifyEmail), authController.verifyEmail);
 
+// Google OAuth2 routes
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get(
+  '/google/callback',
+  passport.authenticate('google', { failureRedirect: '/login', session: false }),
+  authController.loginWithGoogle
+);
 module.exports = router;
 
 /**
@@ -55,7 +63,7 @@ module.exports = router;
  *             example:
  *               name: fake name
  *               email: fake@example.com
- *               password: password1
+ *               password: example@123
  *     responses:
  *       "201":
  *         description: Created
@@ -70,6 +78,8 @@ module.exports = router;
  *                   $ref: '#/components/schemas/AuthTokens'
  *       "400":
  *         $ref: '#/components/responses/DuplicateEmail'
+ *       "403":
+ *         $ref: '#/components/responses/Forbidden'
  */
 
 /**
@@ -96,7 +106,7 @@ module.exports = router;
  *                 format: password
  *             example:
  *               email: fake@example.com
- *               password: password1
+ *               password: example@123
  *     responses:
  *       "200":
  *         description: OK
@@ -288,4 +298,37 @@ module.exports = router;
  *             example:
  *               code: 401
  *               message: verify email failed
+ */
+
+/**
+ * @swagger
+ * /auth/google:
+ *   get:
+ *     summary: Google OAuth2 authentication
+ *     tags: [Auth]
+ *     responses:
+ *       "302":
+ *         description: Redirect to Google OAuth2 authorization page
+ */
+
+/**
+ * @swagger
+ * /auth/google/callback:
+ *   get:
+ *     summary: Google OAuth2 callback
+ *     tags: [Auth]
+ *     responses:
+ *       "200":
+ *         description: OK
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 user:
+ *                   $ref: '#/components/schemas/User'
+ *                 tokens:
+ *                   $ref: '#/components/schemas/AuthTokens'
+ *       "401":
+ *         $ref: '#/components/responses/Unauthorized'
  */

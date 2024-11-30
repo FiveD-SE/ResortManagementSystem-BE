@@ -1,52 +1,6 @@
-# RESTful API Node Server Boilerplate
+# RESTful API Node Server - Resort Management System
 
-[![Build Status](https://travis-ci.org/hagopj13/node-express-boilerplate.svg?branch=master)](https://travis-ci.org/hagopj13/node-express-boilerplate)
-[![Coverage Status](https://coveralls.io/repos/github/hagopj13/node-express-boilerplate/badge.svg?branch=master)](https://coveralls.io/github/hagopj13/node-express-boilerplate?branch=master)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](http://makeapullrequest.com)
-
-A boilerplate/starter project for quickly building RESTful APIs using Node.js, Express, and Mongoose.
-
-By running a single command, you will get a production-ready Node.js app installed and fully configured on your machine. The app comes with many built-in features, such as authentication using JWT, request validation, unit and integration tests, continuous integration, docker support, API documentation, pagination, etc. For more details, check the features list below.
-
-## Quick Start
-
-To create a project, simply run:
-
-```bash
-npx create-nodejs-express-app <project-name>
-```
-
-Or
-
-```bash
-npm init nodejs-express-app <project-name>
-```
-
-## Manual Installation
-
-If you would still prefer to do the installation manually, follow these steps:
-
-Clone the repo:
-
-```bash
-git clone --depth 1 https://github.com/hagopj13/node-express-boilerplate.git
-cd node-express-boilerplate
-npx rimraf ./.git
-```
-
-Install the dependencies:
-
-```bash
-yarn install
-```
-
-Set the environment variables:
-
-```bash
-cp .env.example .env
-
-# open .env and modify the environment variables (if needed)
-```
+This is a RESTful API server for a Resort Management System. It is built using Node.js, Express, and MongoDB. It is a boilerplate project that can be used to build any kind of application.
 
 ## Table of Contents
 
@@ -162,14 +116,37 @@ JWT_SECRET=thisisasamplesecret
 JWT_ACCESS_EXPIRATION_MINUTES=30
 # Number of days after which a refresh token expires
 JWT_REFRESH_EXPIRATION_DAYS=30
+# Number of minutes after which a reset password token expires
+JWT_RESET_PASSWORD_EXPIRATION_MINUTES=10
+# Number of minutes after which a verify email token expires
+JWT_VERIFY_EMAIL_EXPIRATION_MINUTES=10
 
 # SMTP configuration options for the email service
-# For testing, you can use a fake SMTP service like Ethereal: https://ethereal.email/create
 SMTP_HOST=email-server
 SMTP_PORT=587
 SMTP_USERNAME=email-server-username
 SMTP_PASSWORD=email-server-password
 EMAIL_FROM=support@yourapp.com
+
+
+# Google OAuth configuration
+GOOGLE_CLIENT_ID=google-client-id
+GOOGLE_CALLBACK_URL=google-callback-url
+
+# Firebase configuration
+FIREBASE_TYPE=firebase-type
+FIREBASE_PROJECT_ID=firebase-project-id
+FIREBASE_PRIVATE_KEY_ID=firebase-private-key-id
+FIREBASE_PRIVATE_KEY=firebase-private-key
+FIREBASE_CLIENT_EMAIL=firebase-client-email
+FIREBASE_CLIENT_ID=firbase-client-id
+FIREBASE_AUTH_URI=firbase-auth-uri
+FIREBASE_TOKEN_URI=firbase-token-uri
+FIREBASE_AUTH_PROVIDER_X509_CERT_URL=firbase-auth-provider-x509-cert-url
+FIREBASE_CLIENT_X509_CERT_URL=firbase-client-x509-cert-url
+FIREBASE_UNIVERSE_DOMAIN=firbase-universe-domain
+FIREBASE_DATABASE_URL=firbase-database-url
+FIREBASE_STORAGE_BUCKET=firbase-storage-bucket
 ```
 
 ## Project Structure
@@ -191,27 +168,7 @@ src\
 
 ## API Documentation
 
-To view the list of available APIs and their specifications, run the server and go to `http://localhost:3000/v1/docs` in your browser. This documentation page is automatically generated using the [swagger](https://swagger.io/) definitions written as comments in the route files.
-
-### API Endpoints
-
-List of available routes:
-
-**Auth routes**:\
-`POST /v1/auth/register` - register\
-`POST /v1/auth/login` - login\
-`POST /v1/auth/refresh-tokens` - refresh auth tokens\
-`POST /v1/auth/forgot-password` - send reset password email\
-`POST /v1/auth/reset-password` - reset password\
-`POST /v1/auth/send-verification-email` - send verification email\
-`POST /v1/auth/verify-email` - verify email
-
-**User routes**:\
-`POST /v1/users` - create a user\
-`GET /v1/users` - get all users\
-`GET /v1/users/:userId` - get user\
-`PATCH /v1/users/:userId` - update user\
-`DELETE /v1/users/:userId` - delete user
+To view the list of available APIs and their specifications, run the server and go to `http://localhost:3100/v1/docs` in your browser. This documentation page is automatically generated using the [swagger](https://swagger.io/) definitions written as comments in the route files.
 
 ## Error Handling
 
@@ -424,12 +381,6 @@ To modify the ESLint configuration, update the `.eslintrc.json` file. To modify 
 To prevent a certain file or directory from being linted, add it to `.eslintignore` and `.prettierignore`.
 
 To maintain a consistent coding style across different IDEs, the project contains `.editorconfig`
-
-## Inspirations
-
-- [danielfsousa/express-rest-es2017-boilerplate](https://github.com/danielfsousa/express-rest-es2017-boilerplate)
-- [madhums/node-express-mongoose](https://github.com/madhums/node-express-mongoose)
-- [kunalkapadia/express-mongoose-es6-rest-api](https://github.com/kunalkapadia/express-mongoose-es6-rest-api)
 
 ## License
 
