@@ -1,7 +1,6 @@
 import { GENDER } from '@/modules/user/entities/user.entity';
-import { Transform, Type } from 'class-transformer';
+import { Transform } from 'class-transformer';
 import {
-	IsDate,
 	IsEmail,
 	IsEnum,
 	IsNotEmpty,

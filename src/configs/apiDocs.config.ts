@@ -4,8 +4,8 @@ import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import metadata from '../metadata';
 export async function configSwagger(app: INestApplication) {
 	const config = new DocumentBuilder()
-		.setTitle('Nest Base Project')
-		.setDescription('## Description')
+		.setTitle('Resort Management System')
+		.setDescription('The Resort Management System API description')
 		.setVersion('1.0')
 		.addBearerAuth(
 			{

@@ -44,6 +44,7 @@ export class AuthController {
 		responseMessage:
 			'User registered successfully. Please check your email to verify your account',
 	})
+	@ApiBody({ type: RegisterRequestDTO })
 	async register(@Body() dto: RegisterRequestDTO) {
 		return await this.authService.register(dto);
 	}

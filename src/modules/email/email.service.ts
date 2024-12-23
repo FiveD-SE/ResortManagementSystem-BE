@@ -39,12 +39,17 @@ export class EmailService {
 		});
 	}
 
-	async sendUserVerifyEmail(email: string, token: string): Promise<void> {
+	async sendUserVerifyEmail(
+		email: string,
+		firstName: string,
+		token: string,
+	): Promise<void> {
 		const verificationEmailUrl = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${token}`;
 		await this.sendEmail({
 			to: email,
 			subject: 'Verify your account',
 			html: this.convertToHTML('mail-verify-email', {
+				name: firstName,
 				verification_url: verificationEmailUrl,
 			}),
 		});
@@ -52,13 +57,18 @@ export class EmailService {
 
 	async sendUserResetPasswordEmail(
 		email: string,
+		name: string,
 		token: string,
 	): Promise<void> {
 		const resetPasswordUrl = `${this.configService.get<string>('FRONTEND_URL')}/reset-password?token=${token}`;
 		await this.sendEmail({
 			to: email,
 			subject: 'Reset your password',
-			html: this.convertToHTML('auth/reset_password', { resetPasswordUrl }),
+			html: this.convertToHTML('mail-reset-password', {
+				name,
+				user_email: email,
+				reset_password_url: resetPasswordUrl,
+			}),
 		});
 	}
 }

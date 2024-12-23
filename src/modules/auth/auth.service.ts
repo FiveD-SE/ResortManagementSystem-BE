@@ -173,6 +173,7 @@ export class AuthService {
 		);
 		await this.emailService.sendUserResetPasswordEmail(
 			email,
+			user.firstName,
 			resetPasswordToken,
 		);
 	}
@@ -235,7 +236,11 @@ export class AuthService {
 			exp: this.VERIFY_ACCOUNT_EXPIRATION_TIME,
 		});
 
-		await this.emailService.sendUserVerifyEmail(email, verifyToken);
+		await this.emailService.sendUserVerifyEmail(
+			email,
+			user.firstName,
+			verifyToken,
+		);
 	}
 
 	async loginWithGoogle(user: any) {
