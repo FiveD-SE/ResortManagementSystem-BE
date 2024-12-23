@@ -20,6 +20,7 @@ import {
 	TokenPayload,
 	VerifyAccountTokenPayload,
 } from './interfaces/token.interface';
+import { TokenType } from '../token/entities/token.entity';
 
 @Injectable()
 export class AuthService {
@@ -106,22 +107,22 @@ export class AuthService {
 	}
 
 	async getUserIfRefreshTokenMatched(
-		userID: string,
+		userId: string,
 		refreshToken: string,
 	): Promise<User> {
-		const user = await this.userService.findByID(userID);
-		if (!user) {
-			throw new BadRequestException('User not found');
+		const token = await this.tokenService.findToken(
+			userId,
+			TokenType.RefreshToken,
+		);
+		if (!token) {
+			throw new BadRequestException('Invalid Token');
 		}
 
-		const isMatching = await this.verifyPlainContentWithHashedContent(
-			refreshToken,
-			user.currentRefreshToken,
-		);
+		const isMatching = await bcrypt.compare(refreshToken, token.token);
 		if (!isMatching) {
 			throw new BadRequestException('Invalid Token');
 		}
-		return user;
+		return this.userService.findByID(userId);
 	}
 
 	generateAccessToken(payload: TokenPayload): string {
@@ -144,9 +145,13 @@ export class AuthService {
 		});
 	}
 
-	async storeRefreshToken(user_id: string, token: string): Promise<void> {
+	async storeRefreshToken(userId: string, token: string): Promise<void> {
 		const hashedToken = await bcrypt.hash(token, this.SALT_ROUND);
-		await this.userService.setCurrentRefreshToken(user_id, hashedToken);
+		await this.tokenService.storeToken(
+			userId,
+			hashedToken,
+			TokenType.RefreshToken,
+		);
 	}
 
 	async forgotPassword(email: string): Promise<void> {
@@ -161,6 +166,11 @@ export class AuthService {
 			exp: this.FORGOT_PASSWORD_EXPIRATION_TIME,
 		});
 
+		await this.tokenService.storeToken(
+			user.id,
+			resetPasswordToken,
+			TokenType.ResetPassword,
+		);
 		await this.emailService.sendUserResetPasswordEmail(
 			email,
 			resetPasswordToken,
@@ -185,6 +195,7 @@ export class AuthService {
 
 		const hashedPassword = await bcrypt.hash(dto.newPassword, this.SALT_ROUND);
 		await this.userService.update(user.id, { password: hashedPassword });
+		await this.tokenService.deleteToken(user.id, TokenType.ResetPassword);
 	}
 
 	async verifyAccount(dto: VerifyAccountRequestDTO): Promise<void> {
@@ -228,20 +239,29 @@ export class AuthService {
 	}
 
 	async loginWithGoogle(user: any) {
-		const existingUser = await this.userService.findOne({ email: user.email });
+		let existingUser = await this.userService.findOne({ email: user.email });
 		if (!existingUser) {
-			await this.userService.create({
+			const defaultPassword = await bcrypt.hash(
+				'defaultPassword',
+				this.SALT_ROUND,
+			);
+			existingUser = await this.userService.create({
 				email: user.email,
-				firstName: user.firstName,
-				lastName: user.lastName,
+				firstName: user.firstName || 'DefaultFirstName',
+				lastName: user.lastName || 'DefaultLastName',
+				password: defaultPassword,
 			});
 		}
 
-		const accessToken = this.jwtService.sign({ email: user.email });
-		const refreshToken = this.jwtService.sign(
-			{ email: user.email },
-			{ expiresIn: '7d' },
-		);
+		const accessToken = this.generateAccessToken({
+			userID: existingUser.id,
+		});
+
+		const refreshToken = this.generateRefreshToken({
+			userID: existingUser.id,
+		});
+
+		await this.storeRefreshToken(existingUser.id, refreshToken);
 
 		return { accessToken, refreshToken };
 	}

@@ -5,6 +5,7 @@ import {
 	Controller,
 	Get,
 	Req,
+	Res,
 	UseGuards,
 	UseInterceptors,
 } from '@nestjs/common';
@@ -27,6 +28,7 @@ import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSeri
 import { User } from '../user/entities/user.entity';
 import { ChangePasswWordRequestDto } from './dto/request/changePassword.request.dto';
 import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 
 @Controller('auth')
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
@@ -134,12 +136,12 @@ export class AuthController {
 
 	@Get('google/redirect')
 	@UseGuards(AuthGuard('google'))
-	async googleAuthRedirect(@Req() req) {
+	async googleAuthRedirect(@Req() req, @Res() res: Response) {
 		const { accessToken, refreshToken } =
 			await this.authService.loginWithGoogle(req.user);
 		const frontendUrl = this.configService.get<string>('FRONTEND_URL');
-		return {
-			url: `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`,
-		};
+		res.redirect(
+			`${frontendUrl}/third-party?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+		);
 	}
 }

@@ -16,10 +16,6 @@ export class UpdateUserRequestDTO {
 	@IsOptional()
 	lastName: string;
 
-	@IsDate()
-	@IsOptional()
-	dob: Date;
-
 	@IsEnum(GENDER)
 	@IsOptional()
 	gender: string;

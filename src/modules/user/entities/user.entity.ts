@@ -45,9 +45,6 @@ export class User extends BaseEntity {
 	@Prop({ default: null })
 	avatar: string;
 
-	@Prop({ required: true })
-	dob: Date;
-
 	@Prop({
 		enum: GENDER,
 		default: GENDER.Other,

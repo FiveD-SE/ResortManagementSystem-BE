@@ -33,9 +33,4 @@ export class RegisterRequestDTO {
 	@IsString()
 	@Transform(({ value }) => value.toLowerCase())
 	gender: GENDER;
-
-	@Transform(({ value }) => value ?? new Date())
-	@IsDate()
-	@Type(() => Date)
-	dob: Date;
 }
