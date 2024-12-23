@@ -3,18 +3,18 @@ import { ImgurController } from './imgur.controller';
 import { ImgurService } from './imgur.service';
 
 describe('ImgurController', () => {
-  let controller: ImgurController;
+	let controller: ImgurController;
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      controllers: [ImgurController],
-      providers: [ImgurService],
-    }).compile();
+	beforeEach(async () => {
+		const module: TestingModule = await Test.createTestingModule({
+			controllers: [ImgurController],
+			providers: [ImgurService],
+		}).compile();
 
-    controller = module.get<ImgurController>(ImgurController);
-  });
+		controller = module.get<ImgurController>(ImgurController);
+	});
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
+	it('should be defined', () => {
+		expect(controller).toBeDefined();
+	});
 });
