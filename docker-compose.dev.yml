@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  nestjsbase:
+    container_name: nestjsbase
+    image: nestjsbase:latest
+    build:
+      context: .
+      target: development
+    ports:
+      - ${PORT}:${PORT}
+    volumes:
+      - ./:/usr/src/app
+    command: npm run start:dev
+    restart: unless-stopped
+
+networks:
+  default:
+    driver: bridge
