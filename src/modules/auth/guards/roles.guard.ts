@@ -6,16 +6,27 @@ import { Observable } from 'rxjs';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
-	constructor(private readonly refector: Reflector) {}
+	constructor(private readonly reflector: Reflector) {}
 
 	canActivate(
 		context: ExecutionContext,
 	): boolean | Promise<boolean> | Observable<boolean> {
-		const roles: string[] = this.refector.getAllAndOverride(ROLES, [
+		const roles: string[] = this.reflector.getAllAndOverride<string[]>(ROLES, [
 			context.getHandler(),
 			context.getClass(),
 		]);
+
+		if (!roles) {
+			return true;
+		}
+
 		const request: RequestWithUser = context.switchToHttp().getRequest();
-		return roles.includes(request.user.role as unknown as string);
+		const userRole = request.user?.role;
+
+		if (!userRole) {
+			return false;
+		}
+
+		return roles.includes(userRole);
 	}
 }

@@ -13,6 +13,8 @@ import { AuthModule } from './modules/auth/auth.module';
 import { EmailModule } from './modules/email/email.module';
 import { ImgurModule } from './modules/imgur/imgur.module';
 import { TokenModule } from './modules/token/token.module';
+import { RoomTypeModule } from './modules/roomType/roomType.module';
+import { RoomModule } from './modules/room/room.module';
 
 @Module({
 	imports: [
@@ -58,6 +60,8 @@ import { TokenModule } from './modules/token/token.module';
 		UserModule,
 		TokenModule,
 		ImgurModule,
+		RoomTypeModule,
+		RoomModule,
 	],
 	controllers: [AppController],
 	providers: [

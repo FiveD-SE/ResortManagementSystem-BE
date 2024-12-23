@@ -1,10 +1,4 @@
-import {
-	IsBoolean,
-	IsDate,
-	IsEnum,
-	IsOptional,
-	IsString,
-} from 'class-validator';
+import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
 import { GENDER, UserRole } from '../../entities/user.entity';
 
 export class UpdateUserRequestDTO {
