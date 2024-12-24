@@ -12,5 +12,6 @@ import { ServiceType, ServiceTypeSchema } from './entities/serviceType.entity';
 	],
 	providers: [ServiceTypeService],
 	controllers: [ServiceTypeController],
+	exports: [ServiceTypeService],
 })
 export class ServiceTypeModule {}
