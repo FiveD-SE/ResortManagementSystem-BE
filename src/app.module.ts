@@ -15,6 +15,7 @@ import { ImgurModule } from './modules/imgur/imgur.module';
 import { TokenModule } from './modules/token/token.module';
 import { RoomTypeModule } from './modules/roomType/roomType.module';
 import { RoomModule } from './modules/room/room.module';
+import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
 
 @Module({
 	imports: [
@@ -62,6 +63,7 @@ import { RoomModule } from './modules/room/room.module';
 		ImgurModule,
 		RoomTypeModule,
 		RoomModule,
+		ServiceTypeModule,
 	],
 	controllers: [AppController],
 	providers: [
