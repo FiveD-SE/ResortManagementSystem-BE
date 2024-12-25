@@ -1,5 +1,5 @@
 # Resort Management System (RMS)
-
+[![sloweyyy](https://wakatime.com/badge/github/FiveD-SE/ResortManagementSystem-BE.svg)](https://wakatime.com/badge/github/FiveD-SE/ResortManagementSystem-BE)
 ## Overview
 
 The **Resort Management System (RMS)** is a comprehensive software solution designed to streamline resort operations, from guest services to administrative tasks. RMS offers an integrated, web-based platform accessible from desktops, tablets, and mobile devices, making it a scalable and adaptable solution for resorts of all sizes.
