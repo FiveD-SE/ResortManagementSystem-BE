@@ -38,7 +38,7 @@ export class ServiceController {
 		return this.serviceService.findOne(id);
 	}
 
-	@Get('get-by-service-id/:serviceTypeId')
+	@Get('service-type/:serviceTypeId')
 	findByServiceTypeId(
 		@Param('serviceTypeId') serviceTypeId: string,
 	): Promise<Service[]> {
