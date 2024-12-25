@@ -26,13 +26,6 @@ export class UserPromotionController {
 		return this.userPromotionService.getUserPromotionHistoryByUserId(userId);
 	}
 
-	@Get('get-available-promotions')
-	async getAvailabelPromotions(
-		@CurrentUser('id') userId: string,
-	): Promise<UserPromotion[]> {
-		return this.userPromotionService.getAvailablePromotions(userId);
-	}
-
 	@Post('use-promotion')
 	async usePromotion(
 		@CurrentUser('id') userId: string,

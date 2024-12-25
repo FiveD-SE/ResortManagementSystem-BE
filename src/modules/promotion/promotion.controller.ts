@@ -14,6 +14,7 @@ import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { CurrentUser } from '@/decorators/currentUser.decorator';
 
 @Controller('promotions')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -29,13 +30,11 @@ export class PromotionController {
 	}
 
 	@Get()
-	@Roles(UserRole.Admin)
-	async getAllPromotions(): Promise<Promotion[]> {
-		return this.promotionService.getAllPromotions();
+	async getAllPromotions(@CurrentUser() user: any): Promise<Promotion[]> {
+		return this.promotionService.getAllPromotions(user.role, user.id);
 	}
 
 	@Get(':id')
-	@Roles(UserRole.Admin)
 	async getPromotionById(@Param('id') id: string): Promise<Promotion> {
 		return this.promotionService.getPromotionById(id);
 	}
