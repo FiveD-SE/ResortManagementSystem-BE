@@ -4,6 +4,8 @@ import {
 	IsOptional,
 	IsString,
 	MaxLength,
+	IsArray,
+	ArrayNotEmpty,
 } from 'class-validator';
 
 export class CreateRoomTypeDTO {
@@ -24,4 +26,28 @@ export class CreateRoomTypeDTO {
 	@IsNotEmpty()
 	@IsNumber()
 	guestAmount: number;
+
+	@IsNotEmpty()
+	@IsNumber()
+	bedAmount: number;
+
+	@IsNotEmpty()
+	@IsNumber()
+	bedroomAmount: number;
+
+	@IsNotEmpty()
+	@IsNumber()
+	sharedBathAmount: number;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsString({ each: true })
+	amenities?: string[];
+
+	@IsOptional()
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsString({ each: true })
+	keyFeatures?: string[];
 }

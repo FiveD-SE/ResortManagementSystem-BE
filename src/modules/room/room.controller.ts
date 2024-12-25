@@ -6,7 +6,9 @@ import {
 	Param,
 	Patch,
 	Post,
+	UploadedFiles,
 	UseGuards,
+	UseInterceptors,
 } from '@nestjs/common';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
@@ -16,6 +18,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiBodyWithFiles } from '@/decorators/apiBodyWithFiles.decorator';
 
 @Controller('rooms')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -24,8 +28,25 @@ export class RoomController {
 
 	@Post()
 	@Roles(UserRole.Admin)
-	create(@Body() createRoomDto: CreateRoomDTO): Promise<Room> {
-		return this.roomService.create(createRoomDto);
+	@ApiBodyWithFiles(
+		'images',
+		10,
+		{
+			roomNumber: { type: 'string', maxLength: 5 },
+			roomTypeId: { type: 'string' },
+			status: {
+				type: 'string',
+				enum: ['Available', 'Occupied', 'Under Maintenance'],
+			},
+			pricePerNight: { type: 'number' },
+		},
+		['roomNumber', 'roomTypeId', 'status', 'pricePerNight'],
+	)
+	create(
+		@Body() createRoomDto: CreateRoomDTO,
+		@UploadedFiles() files: Express.Multer.File[],
+	): Promise<Room> {
+		return this.roomService.create(createRoomDto, files);
 	}
 
 	@Get()
@@ -45,11 +66,21 @@ export class RoomController {
 
 	@Patch(':id')
 	@Roles(UserRole.Admin)
+	@ApiBodyWithFiles('images', 10, {
+		roomNumber: { type: 'string', maxLength: 5 },
+		roomTypeId: { type: 'string' },
+		status: {
+			type: 'string',
+			enum: ['Available', 'Occupied', 'Under Maintenance'],
+		},
+		pricePerNight: { type: 'number' },
+	})
 	update(
 		@Param('id') id: string,
 		@Body() updateRoomDto: UpdateRoomDTO,
+		@UploadedFiles() files: Express.Multer.File[],
 	): Promise<Room> {
-		return this.roomService.update(id, updateRoomDto);
+		return this.roomService.update(id, updateRoomDto, files);
 	}
 
 	@Delete(':id')

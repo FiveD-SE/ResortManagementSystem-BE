@@ -4,6 +4,8 @@ import {
 	IsNumber,
 	IsString,
 	MaxLength,
+	IsArray,
+	ArrayNotEmpty,
 } from 'class-validator';
 import { RoomStatus } from '../entities/room.entity';
 
@@ -24,4 +26,10 @@ export class UpdateRoomDTO {
 	@IsOptional()
 	@IsNumber()
 	pricePerNight?: number;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsString({ each: true })
+	images?: string[];
 }
