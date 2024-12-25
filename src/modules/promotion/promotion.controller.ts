@@ -6,6 +6,7 @@ import {
 	Param,
 	Body,
 	UseGuards,
+	Req,
 } from '@nestjs/common';
 import { PromotionService } from './promotion.service';
 import { CreatePromotionRequestDto } from './dto/createPromotion.request.dto';
@@ -14,7 +15,7 @@ import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
-import { CurrentUser } from '@/decorators/currentUser.decorator';
+import { RequestWithUser } from '@/types/request.type';
 
 @Controller('promotions')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -30,7 +31,8 @@ export class PromotionController {
 	}
 
 	@Get()
-	async getAllPromotions(@CurrentUser() user: any): Promise<Promotion[]> {
+	async getAllPromotions(@Req() req: RequestWithUser): Promise<Promotion[]> {
+		const { user } = req;
 		return this.promotionService.getAllPromotions(user.role, user.id);
 	}
 

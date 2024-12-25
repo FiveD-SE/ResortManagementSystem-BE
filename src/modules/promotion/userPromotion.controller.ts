@@ -1,12 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Req, UseGuards } from '@nestjs/common';
 import { UserPromotionService } from './userPromotion.service';
 import { UserPromotion } from './entities/userPromotion.entity';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
-import { CurrentUser } from '@/decorators/currentUser.decorator';
 import { UsePromotionDto } from './dto/usePromotion.request.dto';
+import { RequestWithUser } from '@/types/request.type';
 
 @Controller('user-promotions')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -21,18 +21,20 @@ export class UserPromotionController {
 
 	@Get('get-history')
 	async getUserPromotionHistoryByUserId(
-		@CurrentUser('id') userId: string,
+		@Req() req: RequestWithUser,
 	): Promise<UserPromotion> {
+		const userId = req.user.id;
 		return this.userPromotionService.getUserPromotionHistoryByUserId(userId);
 	}
 
 	@Post('use-promotion')
 	async usePromotion(
-		@CurrentUser('id') userId: string,
+		@Req() req: RequestWithUser,
 		@Body() usePromotionDto: UsePromotionDto,
 	): Promise<UserPromotion> {
+		const { user } = req;
 		return this.userPromotionService.usePromotion(
-			userId,
+			user.id,
 			usePromotionDto.promotionId,
 		);
 	}
