@@ -15,7 +15,8 @@ import { ImgurModule } from './modules/imgur/imgur.module';
 import { TokenModule } from './modules/token/token.module';
 import { RoomTypeModule } from './modules/roomType/roomType.module';
 import { RoomModule } from './modules/room/room.module';
-
+import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
+import { ServiceModule } from './modules/service/service.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -62,6 +63,8 @@ import { RoomModule } from './modules/room/room.module';
 		ImgurModule,
 		RoomTypeModule,
 		RoomModule,
+		ServiceTypeModule,
+		ServiceModule,
 	],
 	controllers: [AppController],
 	providers: [
