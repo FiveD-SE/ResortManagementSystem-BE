@@ -18,6 +18,7 @@ import { RoomModule } from './modules/room/room.module';
 import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
 import { ServiceModule } from './modules/service/service.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
+import { ReportModule } from './modules/report/report.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -67,6 +68,7 @@ import { PromotionModule } from './modules/promotion/promotion.module';
 		ServiceTypeModule,
 		ServiceModule,
 		PromotionModule,
+		ReportModule,
 	],
 	controllers: [AppController],
 	providers: [
