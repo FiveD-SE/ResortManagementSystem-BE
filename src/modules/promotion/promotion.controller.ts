@@ -29,11 +29,13 @@ export class PromotionController {
 	}
 
 	@Get()
+	@Roles(UserRole.Admin)
 	async getAllPromotions(): Promise<Promotion[]> {
 		return this.promotionService.getAllPromotions();
 	}
 
 	@Get(':id')
+	@Roles(UserRole.Admin)
 	async getPromotionById(@Param('id') id: string): Promise<Promotion> {
 		return this.promotionService.getPromotionById(id);
 	}
