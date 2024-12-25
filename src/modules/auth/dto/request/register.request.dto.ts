@@ -1,8 +1,5 @@
-import { GENDER } from '@/modules/user/entities/user.entity';
-import { Transform } from 'class-transformer';
 import {
 	IsEmail,
-	IsEnum,
 	IsNotEmpty,
 	IsString,
 	IsStrongPassword,
@@ -26,10 +23,4 @@ export class RegisterRequestDTO {
 	@IsNotEmpty()
 	@IsString()
 	lastName: string;
-
-	@IsNotEmpty()
-	@IsEnum(GENDER)
-	@IsString()
-	@Transform(({ value }) => value.toLowerCase())
-	gender: GENDER;
 }
