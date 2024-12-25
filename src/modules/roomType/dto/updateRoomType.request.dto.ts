@@ -1,4 +1,11 @@
-import { IsNumber, IsOptional, IsString, MaxLength } from 'class-validator';
+import {
+	IsNumber,
+	IsOptional,
+	IsString,
+	MaxLength,
+	IsArray,
+	ArrayNotEmpty,
+} from 'class-validator';
 
 export class UpdateRoomTypeDTO {
 	@IsOptional()
@@ -18,4 +25,28 @@ export class UpdateRoomTypeDTO {
 	@IsOptional()
 	@IsNumber()
 	guestAmount?: number;
+
+	@IsOptional()
+	@IsNumber()
+	bedAmount?: number;
+
+	@IsOptional()
+	@IsNumber()
+	bedroomAmount?: number;
+
+	@IsOptional()
+	@IsNumber()
+	sharedBathAmount?: number;
+
+	@IsOptional()
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsString({ each: true })
+	amenities?: string[];
+
+	@IsOptional()
+	@IsArray()
+	@ArrayNotEmpty()
+	@IsString({ each: true })
+	keyFeatures?: string[];
 }

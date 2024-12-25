@@ -25,12 +25,6 @@ export class UserService extends BaseServiceAbstract<User> {
 		return u;
 	}
 
-	async setCurrentRefreshToken(id: string, hashedToken: string): Promise<void> {
-		await this.userRepo.update(id, {
-			currentRefreshToken: hashedToken,
-		});
-	}
-
 	async changeAvatar(userID: string, file: Express.Multer.File): Promise<User> {
 		await this.getUser(userID);
 		const avatar = await this.imgurService.uploadImage(file);

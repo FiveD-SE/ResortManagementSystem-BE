@@ -27,9 +27,41 @@ export class PromotionService {
 		const newPromotion = new this.promotionModel(promotionDto);
 		return await newPromotion.save();
 	}
+	async getAllPromotions(
+		userRole: string,
+		userId: string,
+	): Promise<Promotion[]> {
+		if (userRole === 'admin') {
+			return await this.promotionModel.find().exec();
+		}
 
-	async getAllPromotions(): Promise<Promotion[]> {
-		return this.promotionModel.find().exec();
+		if (!Types.ObjectId.isValid(userId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const userPromotion = await this.userPromotionModel
+			.findOne({ userId })
+			.exec();
+
+		const currentDate = new Date();
+		const allPromotions = await this.promotionModel
+			.find({
+				amount: { $gt: 0 },
+				startDate: { $lte: currentDate },
+				endDate: { $gte: currentDate },
+			})
+			.exec();
+
+		if (!userPromotion) {
+			return allPromotions;
+		}
+		const usedPromotionIds = userPromotion.promotions.map((p) => p.promotionId);
+
+		const availablePromotions = allPromotions.filter(
+			(promotion) => !usedPromotionIds.includes(promotion.id.toString()),
+		);
+
+		return availablePromotions;
 	}
 
 	async getPromotionById(promotionId: string): Promise<Promotion> {

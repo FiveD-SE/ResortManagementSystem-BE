@@ -38,35 +38,6 @@ export class UserPromotionService {
 		}
 		return userPromotion;
 	}
-	async getAvailablePromotions(userId: string): Promise<any[]> {
-		if (!Types.ObjectId.isValid(userId)) {
-			throw new BadRequestException('Invalid ID format');
-		}
-
-		const userPromotion = await this.userPromotionModel
-			.findOne({ userId })
-			.exec();
-
-		const currentDate = new Date();
-		const allPromotions = await this.promotionModel
-			.find({
-				amount: { $gt: 0 },
-				startDate: { $lte: currentDate },
-				endDate: { $gte: currentDate },
-			})
-			.exec();
-
-		if (!userPromotion) {
-			return allPromotions;
-		}
-		const usedPromotionIds = userPromotion.promotions.map((p) => p.promotionId);
-
-		const availablePromotions = allPromotions.filter(
-			(promotion) => !usedPromotionIds.includes(promotion.id.toString()),
-		);
-
-		return availablePromotions;
-	}
 
 	async usePromotion(
 		userId: string,

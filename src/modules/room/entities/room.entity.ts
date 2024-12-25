@@ -30,11 +30,8 @@ export class Room extends BaseEntity {
 	@Prop({ required: true, type: Number })
 	pricePerNight: number;
 
-	@Prop({ type: Date, default: Date.now })
-	createdAt: Date;
-
-	@Prop({ type: Date, default: Date.now })
-	updatedAt: Date;
+	@Prop({ type: [String], default: [] })
+	images: string[];
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

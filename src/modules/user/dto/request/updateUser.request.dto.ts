@@ -1,5 +1,5 @@
 import { IsBoolean, IsEnum, IsOptional, IsString } from 'class-validator';
-import { GENDER, UserRole } from '../../entities/user.entity';
+import { UserRole } from '../../entities/user.entity';
 
 export class UpdateUserRequestDTO {
 	@IsString()
@@ -9,10 +9,6 @@ export class UpdateUserRequestDTO {
 	@IsString()
 	@IsOptional()
 	lastName: string;
-
-	@IsEnum(GENDER)
-	@IsOptional()
-	gender: string;
 
 	@IsEnum(UserRole)
 	@IsOptional()
