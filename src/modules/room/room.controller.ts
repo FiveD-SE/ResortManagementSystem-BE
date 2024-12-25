@@ -8,7 +8,6 @@ import {
 	Post,
 	UploadedFiles,
 	UseGuards,
-	UseInterceptors,
 } from '@nestjs/common';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
@@ -18,7 +17,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import { ApiBodyWithFiles } from '@/decorators/apiBodyWithFiles.decorator';
 
 @Controller('rooms')
