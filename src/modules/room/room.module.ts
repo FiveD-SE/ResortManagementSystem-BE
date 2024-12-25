@@ -4,6 +4,7 @@ import { RoomService } from './room.service';
 import { RoomController } from './room.controller';
 import { Room, RoomSchema } from './entities/room.entity';
 import { RoomType, RoomTypeSchema } from '../roomType/entities/roomType.entity';
+import { ImgurModule } from '../imgur/imgur.module';
 
 @Module({
 	imports: [
@@ -11,6 +12,7 @@ import { RoomType, RoomTypeSchema } from '../roomType/entities/roomType.entity';
 		MongooseModule.forFeature([
 			{ name: RoomType.name, schema: RoomTypeSchema },
 		]),
+		ImgurModule,
 	],
 	controllers: [RoomController],
 	providers: [RoomService],
