@@ -9,10 +9,13 @@ import {
 	UserPromotion,
 	UserPromotionDocument,
 } from './entities/userPromotion.entity';
+import { Promotion, PromotionDocument } from './entities/promotion.entity';
 
 @Injectable()
 export class UserPromotionService {
 	constructor(
+		@InjectModel(Promotion.name)
+		private readonly promotionModel: Model<PromotionDocument>,
 		@InjectModel(UserPromotion.name)
 		private readonly userPromotionModel: Model<UserPromotionDocument>,
 	) {}
@@ -21,7 +24,9 @@ export class UserPromotionService {
 		return this.userPromotionModel.find().exec();
 	}
 
-	async getUserPromotionByUserId(userId: string): Promise<UserPromotion> {
+	async getUserPromotionHistoryByUserId(
+		userId: string,
+	): Promise<UserPromotion> {
 		if (!Types.ObjectId.isValid(userId)) {
 			throw new BadRequestException('Invalid ID format');
 		}
@@ -32,5 +37,85 @@ export class UserPromotionService {
 			throw new NotFoundException('UserPromotion not found for this user');
 		}
 		return userPromotion;
+	}
+	async getAvailablePromotions(userId: string): Promise<any[]> {
+		if (!Types.ObjectId.isValid(userId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const userPromotion = await this.userPromotionModel
+			.findOne({ userId })
+			.exec();
+
+		const currentDate = new Date();
+		const allPromotions = await this.promotionModel
+			.find({
+				amount: { $gt: 0 },
+				startDate: { $lte: currentDate },
+				endDate: { $gte: currentDate },
+			})
+			.exec();
+
+		if (!userPromotion) {
+			return allPromotions;
+		}
+		const usedPromotionIds = userPromotion.promotions.map((p) => p.promotionId);
+
+		const availablePromotions = allPromotions.filter(
+			(promotion) => !usedPromotionIds.includes(promotion.id.toString()),
+		);
+
+		return availablePromotions;
+	}
+
+	async usePromotion(
+		userId: string,
+		promotionId: string,
+	): Promise<UserPromotion> {
+		if (
+			!Types.ObjectId.isValid(userId) ||
+			!Types.ObjectId.isValid(promotionId)
+		) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const promotion = await this.promotionModel.findById(promotionId).exec();
+		if (!promotion) {
+			throw new NotFoundException('Promotion not found');
+		}
+
+		if (promotion.amount <= 0) {
+			throw new BadRequestException('Promotion is no longer available');
+		}
+
+		let userPromotion = await this.userPromotionModel
+			.findOne({ userId })
+			.exec();
+
+		if (!userPromotion) {
+			userPromotion = new this.userPromotionModel({ userId, promotions: [] });
+		}
+
+		const existingPromotion = userPromotion.promotions.find(
+			(p) => p.promotionId === promotionId,
+		);
+
+		if (existingPromotion) {
+			throw new BadRequestException('User has already used this promotion');
+		}
+
+		userPromotion.promotions.push({
+			promotionId: promotion.id.toString(),
+			promotionName: promotion.promotionName,
+			description: promotion.description,
+			discount: promotion.discount,
+			startDate: promotion.startDate,
+			endDate: promotion.endDate,
+		});
+
+		promotion.amount -= 1;
+		await promotion.save();
+
+		return await userPromotion.save();
 	}
 }

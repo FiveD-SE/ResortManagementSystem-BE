@@ -24,7 +24,7 @@ export class CreatePromotionRequestDto {
 
 	@IsNotEmpty()
 	@IsNumber()
-	quantityPerUser?: number;
+	amount?: number;
 
 	@IsNotEmpty()
 	@IsDate()

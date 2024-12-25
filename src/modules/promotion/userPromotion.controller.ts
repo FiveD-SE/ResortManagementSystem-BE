@@ -1,10 +1,12 @@
-import { Controller, Get, Param, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { UserPromotionService } from './userPromotion.service';
 import { UserPromotion } from './entities/userPromotion.entity';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { CurrentUser } from '@/decorators/currentUser.decorator';
+import { UsePromotionDto } from './dto/usePromotion.request.dto';
 
 @Controller('user-promotions')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -17,10 +19,28 @@ export class UserPromotionController {
 		return this.userPromotionService.getAllUserPromotions();
 	}
 
-	@Get(':userId')
-	async getUserPromotionByUserId(
-		@Param('userId') userId: string,
+	@Get('get-history')
+	async getUserPromotionHistoryByUserId(
+		@CurrentUser('id') userId: string,
 	): Promise<UserPromotion> {
-		return this.userPromotionService.getUserPromotionByUserId(userId);
+		return this.userPromotionService.getUserPromotionHistoryByUserId(userId);
+	}
+
+	@Get('get-available-promotions')
+	async getAvailabelPromotions(
+		@CurrentUser('id') userId: string,
+	): Promise<UserPromotion[]> {
+		return this.userPromotionService.getAvailablePromotions(userId);
+	}
+
+	@Post('use-promotion')
+	async usePromotion(
+		@CurrentUser('id') userId: string,
+		@Body() usePromotionDto: UsePromotionDto,
+	): Promise<UserPromotion> {
+		return this.userPromotionService.usePromotion(
+			userId,
+			usePromotionDto.promotionId,
+		);
 	}
 }

@@ -29,7 +29,7 @@ export class Promotion extends BaseEntity {
 	endDate: Date;
 
 	@Prop({ required: true, type: Number })
-	quantityPerUser: number;
+	amount: number;
 }
 
 export const PromotionSchema = SchemaFactory.createForClass(Promotion);

@@ -19,6 +19,6 @@ import { UserManagerController } from './userManager.controller';
 		UserManagerService,
 		{ provide: 'UsersRepositoryInterface', useClass: UsersRepository },
 	],
-	exports: [UserService, UserManagerService, MongooseModule],
+	exports: [UserService, UserManagerService],
 })
 export class UserModule {}

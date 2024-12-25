@@ -1,4 +1,3 @@
-import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
@@ -12,7 +11,7 @@ export type UserPromotionDocument = HydratedDocument<UserPromotion>;
 	timestamps: true,
 	collection: 'userPromotions',
 })
-export class UserPromotion extends BaseEntity {
+export class UserPromotion {
 	@Prop({ required: true, unique: true, type: String })
 	userId: string;
 
@@ -25,7 +24,6 @@ export class UserPromotion extends BaseEntity {
 				discount: { type: Number, required: true },
 				startDate: { type: Date, required: true },
 				endDate: { type: Date, required: true },
-				quantity: { type: Number, required: true },
 			},
 		],
 		default: [],
@@ -37,7 +35,6 @@ export class UserPromotion extends BaseEntity {
 		discount: number;
 		startDate: Date;
 		endDate: Date;
-		quantity: number;
 	}[];
 }
 
