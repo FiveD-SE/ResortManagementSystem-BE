@@ -29,6 +29,16 @@ async function bootstrap() {
 		}),
 	);
 
+	app.enableCors({
+		origin: [
+			'http://localhost:3000',
+			'http://localhost:5173',
+			configService.get<string>('FRONTEND_URL'),
+		],
+		methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+		credentials: true,
+	});
+
 	await app.listen(configService.get('PORT'), () => {
 		logger.log(
 			`Server running on http://localhost:${configService.get('PORT')}`,
