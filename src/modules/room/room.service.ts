@@ -13,6 +13,7 @@ import {
 	RoomTypeDocument,
 } from '../roomType/entities/roomType.entity';
 import { ImgurService } from '../imgur/imgur.service';
+import { PaginateParams, PaginateData } from '@/types/common.type';
 
 @Injectable()
 export class RoomService {
@@ -46,8 +47,35 @@ export class RoomService {
 		return newRoom.save();
 	}
 
-	async findAll(): Promise<Room[]> {
-		return this.roomModel.find().exec();
+	async findAll(params: PaginateParams): Promise<PaginateData<Room>> {
+		const { page, limit, sort } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, items] = await Promise.all([
+			this.roomModel.countDocuments().exec(),
+			this.roomModel
+				.find()
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: items,
+		};
 	}
 
 	async findOne(id: string): Promise<Room> {
@@ -58,14 +86,38 @@ export class RoomService {
 		return room;
 	}
 
-	async findByRoomTypeId(roomTypeId: string): Promise<Room[]> {
-		const rooms = await this.roomModel.find({ roomTypeId }).exec();
-		if (!rooms || rooms.length === 0) {
-			throw new NotFoundException(
-				`No rooms found with RoomType ID ${roomTypeId}`,
-			);
-		}
-		return rooms;
+	async findByRoomTypeId(
+		roomTypeId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<Room>> {
+		const { page, limit, sort } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, items] = await Promise.all([
+			this.roomModel.countDocuments({ roomTypeId }).exec(),
+			this.roomModel
+				.find({ roomTypeId })
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: items,
+		};
 	}
 
 	async update(

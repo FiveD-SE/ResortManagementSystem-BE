@@ -2,8 +2,8 @@ import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { ApiProperty } from '@nestjs/swagger';
 
 export enum SORT_TYPE {
-	'DESC' = 'desc',
-	'ASC' = 'acs',
+	DESC = 'desc',
+	ASC = 'asc',
 }
 
 export type FindAllResponse<T> = { count: number; items: T[] };
@@ -38,5 +38,5 @@ export class PaginateData<T extends BaseEntity> {
 export type PaginateParams = {
 	page: number;
 	limit: number;
-	sort: string;
+	sort?: SORT_TYPE;
 };
