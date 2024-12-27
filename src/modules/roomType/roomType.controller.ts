@@ -16,6 +16,9 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
+import { PaginateData, PaginateParams } from '@/types/common.type';
+import { Query } from '@nestjs/common';
 
 @Controller('room-types')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -29,8 +32,9 @@ export class RoomTypeController {
 	}
 
 	@Get()
-	findAll(): Promise<RoomType[]> {
-		return this.roomTypeService.findAll();
+	@ApiPaginationQuery()
+	findAll(@Query() query: PaginateParams): Promise<PaginateData<RoomType>> {
+		return this.roomTypeService.findAll(query);
 	}
 
 	@Get(':id')
