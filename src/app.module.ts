@@ -19,7 +19,7 @@ import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
 import { ServiceModule } from './modules/service/service.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
 import { ReportModule } from './modules/report/report.module';
-import { ReviewModule } from './modules/preview/review.module';
+import { ReviewModule } from './modules/review/review.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
