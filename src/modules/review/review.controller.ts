@@ -18,6 +18,8 @@ import { ReviewService } from './review.service';
 import { CreateReviewRequestDto } from './dto/createReview.request.dto';
 import { RoomReview } from './entities/roomReview.entity';
 import { ServiceReview } from './entities/serviceReview.entity';
+import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
+import { PaginateData, PaginateParams } from '@/types/common.type';
 
 @Controller('reviews')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -34,21 +36,30 @@ export class ReviewController {
 	}
 
 	@Get()
-	async getAllRoomReviews(): Promise<RoomReview[]> {
-		return this.reviewService.getAllRoomReview();
+	@ApiPaginationQuery()
+	async getAllRoomReviews(
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
+		return this.reviewService.getAllRoomReview(query);
 	}
 
 	@Get('user')
-	async getReviewByUserId(@Req() req: RequestWithUser): Promise<RoomReview[]> {
+	@ApiPaginationQuery()
+	async getReviewByUserId(
+		@Req() req: RequestWithUser,
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
 		const { user } = req;
-		return this.reviewService.getRoomReviewByUserId(user.id);
+		return this.reviewService.getRoomReviewByUserId(user.id, query);
 	}
 
 	@Get(':roomId')
+	@ApiPaginationQuery()
 	async getRoomReviewsByRoomId(
 		@Param('roomId') roomId: string,
-	): Promise<RoomReview[]> {
-		return this.reviewService.getRoomReviewByRoomId(roomId);
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
+		return this.reviewService.getRoomReviewByRoomId(roomId, query);
 	}
 
 	@Get('rooms/:roomId/average-rating')

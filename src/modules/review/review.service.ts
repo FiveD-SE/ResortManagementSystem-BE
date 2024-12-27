@@ -11,6 +11,7 @@ import {
 	ServiceReviewDocument,
 } from './entities/serviceReview.entity';
 import { CreateReviewRequestDto } from './dto/createReview.request.dto';
+import { PaginateData, PaginateParams } from '@/types/common.type';
 @Injectable()
 export class ReviewService {
 	constructor(
@@ -51,36 +52,121 @@ export class ReviewService {
 		return { roomReview, serviceReviews };
 	}
 
-	async getAllRoomReview(): Promise<RoomReview[]> {
-		return await this.roomReviewModel.find().exec();
+	async getAllRoomReview(
+		params: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, items] = await Promise.all([
+			this.roomReviewModel.countDocuments().exec(),
+			this.roomReviewModel
+				.find()
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: items,
+		};
 	}
 
-	async getRoomReviewByRoomId(roomId: string): Promise<RoomReview[]> {
+	async getRoomReviewByRoomId(
+		roomId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
 		if (!Types.ObjectId.isValid(roomId)) {
 			throw new BadRequestException('Invalid Room ID format');
 		}
 
-		const roomReviews = await this.roomReviewModel.find({ roomId }).exec();
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, roomReviews] = await Promise.all([
+			this.roomReviewModel.countDocuments({ roomId }).exec(),
+			this.roomReviewModel
+				.find({ roomId })
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
 		if (!roomReviews || roomReviews.length === 0) {
 			throw new NotFoundException(`No reviews found for Room ID ${roomId}`);
 		}
 
-		return roomReviews;
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: roomReviews,
+		};
 	}
 
-	async getRoomReviewByUserId(userId: string): Promise<RoomReview[]> {
+	async getRoomReviewByUserId(
+		userId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<RoomReview>> {
 		if (!Types.ObjectId.isValid(userId)) {
 			throw new BadRequestException('Invalid User ID format');
 		}
 
-		const userReviews = await this.roomReviewModel
-			.find({ customerId: userId })
-			.exec();
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, userReviews] = await Promise.all([
+			this.roomReviewModel.countDocuments({ customerId: userId }).exec(),
+			this.roomReviewModel
+				.find({ customerId: userId })
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
 		if (!userReviews || userReviews.length === 0) {
 			throw new NotFoundException(`No reviews found for User ID ${userId}`);
 		}
 
-		return userReviews;
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: userReviews,
+		};
 	}
 
 	async getAverageRatingRoomReview(roomId: string): Promise<number> {

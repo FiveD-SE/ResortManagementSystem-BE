@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Report, ReportDocument } from './entities/report.entity';
 import { CreateReportRequestDto } from './dto/createReport.request.dto';
+import { PaginateParams, PaginateData } from '@/types/common.type';
 
 @Injectable()
 export class ReportService {
@@ -26,8 +27,35 @@ export class ReportService {
 		return await createdReport.save();
 	}
 
-	async findAll(): Promise<Report[]> {
-		return this.reportModel.find().exec();
+	async findAll(params: PaginateParams): Promise<PaginateData<Report>> {
+		const { page, limit, sort } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, items] = await Promise.all([
+			this.reportModel.countDocuments().exec(),
+			this.reportModel
+				.find()
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: items,
+		};
 	}
 
 	async findOne(id: string): Promise<Report> {
