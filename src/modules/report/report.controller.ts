@@ -6,13 +6,14 @@ import {
 	Param,
 	Post,
 	UseGuards,
+	Req,
 } from '@nestjs/common';
 import { ReportService } from './report.service';
 import { CreateReportRequestDto } from './dto/createReport.request.dto';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { CurrentUser } from '@/decorators/currentUser.decorator';
 import { Report } from './entities/report.entity';
+import { RequestWithUser } from '@/types/request.type';
 
 @Controller('reports')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -22,9 +23,10 @@ export class ReportController {
 	@Post()
 	create(
 		@Body() createReportDto: CreateReportRequestDto,
-		@CurrentUser('id') userId: string,
+		@Req() req: RequestWithUser,
 	): Promise<Report> {
-		return this.reportService.createWithUserId(userId, createReportDto);
+		const { user } = req;
+		return this.reportService.createWithUserId(user.id, createReportDto);
 	}
 
 	@Get()
