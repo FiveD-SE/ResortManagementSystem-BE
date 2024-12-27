@@ -2,7 +2,7 @@ import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
-export type RoomRevieweDocument = HydratedDocument<RoomReview>;
+export type RoomReviewDocument = HydratedDocument<RoomReview>;
 
 @Schema({
 	toJSON: {

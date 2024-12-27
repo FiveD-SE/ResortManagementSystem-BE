@@ -14,6 +14,8 @@ import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Report } from './entities/report.entity';
 import { RequestWithUser } from '@/types/request.type';
+import { Roles } from '@/decorators/roles.decorator';
+import { UserRole } from '../user/entities/user.entity';
 
 @Controller('reports')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -40,6 +42,7 @@ export class ReportController {
 	}
 
 	@Delete(':id')
+	@Roles(UserRole.Admin)
 	remove(@Param('id') id: string): Promise<void> {
 		return this.reportService.remove(id);
 	}

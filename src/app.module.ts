@@ -19,6 +19,7 @@ import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
 import { ServiceModule } from './modules/service/service.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
 import { ReportModule } from './modules/report/report.module';
+import { ReviewModule } from './modules/preview/review.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -69,6 +70,7 @@ import { ReportModule } from './modules/report/report.module';
 		ServiceModule,
 		PromotionModule,
 		ReportModule,
+		ReviewModule,
 	],
 	controllers: [AppController],
 	providers: [

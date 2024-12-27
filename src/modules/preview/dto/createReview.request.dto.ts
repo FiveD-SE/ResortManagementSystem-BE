@@ -1,17 +1,16 @@
+import { Type } from 'class-transformer';
 import {
+	IsArray,
 	IsNotEmpty,
 	IsNumber,
 	IsOptional,
 	IsString,
 	MaxLength,
+	ValidateNested,
 } from 'class-validator';
+import { CreateServiceReviewRequestDto } from './createServiceReview.request.dto';
 
 export class CreateReviewRequestDto {
-	@IsNotEmpty()
-	@IsString()
-	@MaxLength(50)
-	customerId: string;
-
 	@IsNotEmpty()
 	@IsString()
 	@MaxLength(500)
@@ -27,5 +26,8 @@ export class CreateReviewRequestDto {
 	comment: string;
 
 	@IsOptional()
-	services: { serviceId: string; rating: number }[];
+	@IsArray()
+	@ValidateNested({ each: true })
+	@Type(() => CreateServiceReviewRequestDto)
+	services?: CreateServiceReviewRequestDto[];
 }
