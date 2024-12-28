@@ -18,6 +18,7 @@ import { RoomModule } from './modules/room/room.module';
 import { ServiceTypeModule } from './modules/serviceType/serviceType.module';
 import { ServiceModule } from './modules/service/service.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
+import { ReportModule } from './modules/report/report.module';
 import { RatingModule } from './modules/rating/rating.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
@@ -70,6 +71,7 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
 		ServiceTypeModule,
 		ServiceModule,
 		PromotionModule,
+		ReportModule,
 		RatingModule,
 		BookingModule,
 		InvoiceModule,
