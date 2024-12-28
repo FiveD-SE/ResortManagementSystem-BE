@@ -20,6 +20,7 @@ import { ServiceModule } from './modules/service/service.module';
 import { PromotionModule } from './modules/promotion/promotion.module';
 import { RatingModule } from './modules/rating/rating.module';
 import { BookingModule } from './modules/booking/booking.module';
+import { InvoiceModule } from './modules/invoice/invoice.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -71,6 +72,7 @@ import { BookingModule } from './modules/booking/booking.module';
 		PromotionModule,
 		RatingModule,
 		BookingModule,
+		InvoiceModule,
 	],
 	controllers: [AppController],
 	providers: [
