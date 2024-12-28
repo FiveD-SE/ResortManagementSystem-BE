@@ -1,6 +1,6 @@
 import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { User, UserDocument } from './entities/user.entity';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { User, UserDocument, UserRole } from './entities/user.entity';
 import { UserRepositoryInterface } from './interfaces/user.interface';
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
 import { UserService } from './user.service';
@@ -21,13 +21,46 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 	}
 
 	async updateUser(id: string, dto: UpdateUserRequestDTO): Promise<User> {
-		await this.userService.getUser(id);
+		if (!Types.ObjectId.isValid(id)) {
+			throw new BadRequestException('Invalid ID format');
+		}
 
-		const updateDto = {
-			...dto,
-			serviceTypeId: new Types.ObjectId(dto.serviceTypeId),
-		};
-		return await this.update(id, updateDto);
+		const existingUser = await this.userService.getUser(id);
+
+		if (!existingUser) {
+			throw new BadRequestException('User not found');
+		}
+
+		const updateDto: any = { ...dto };
+
+		if (dto.role === UserRole.Service_Staff) {
+			if (!dto.serviceTypeId) {
+				throw new BadRequestException(
+					'ServiceTypeId is required for service_staff role.',
+				);
+			}
+			if (!Types.ObjectId.isValid(dto.serviceTypeId)) {
+				throw new BadRequestException('Invalid ID format');
+			}
+
+			updateDto.serviceTypeId = new Types.ObjectId(dto.serviceTypeId);
+		} else {
+			updateDto.serviceTypeId = undefined;
+		}
+
+		const updatedUser = await this.update(id, updateDto);
+
+		if (updatedUser.role !== UserRole.Service_Staff) {
+			await this.userModel
+				.updateOne({ _id: id }, { $unset: { serviceTypeId: '' } })
+				.exec();
+		}
+
+		if (updatedUser.serviceTypeId) {
+			(updatedUser as any).serviceTypeId = updatedUser.serviceTypeId.toString();
+		}
+
+		return updatedUser;
 	}
 
 	async findAllWithPagination(
@@ -64,6 +97,12 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 				.limit(limit)
 				.exec(),
 		]);
+
+		users.forEach((user) => {
+			if (user.serviceTypeId) {
+				(user as any).serviceTypeId = user.serviceTypeId.toString();
+			}
+		});
 
 		const totalPages = Math.ceil(count / limit);
 

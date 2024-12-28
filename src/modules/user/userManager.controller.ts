@@ -14,7 +14,13 @@ import {
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
 import { User, UserRole } from './entities/user.entity';
 import { UserManagerService } from './userManager.service';
-import { ApiOperation, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+	ApiBody,
+	ApiOperation,
+	ApiParam,
+	ApiQuery,
+	ApiTags,
+} from '@nestjs/swagger';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Roles } from '@/decorators/roles.decorator';
@@ -93,6 +99,7 @@ export class UserManagerController {
 		required: true,
 		description: 'ID of the user to update',
 	})
+	@ApiBody({ type: UpdateUserRequestDTO })
 	updateUser(
 		@Param('userID') userID: string,
 		@Body() dto: UpdateUserRequestDTO,
