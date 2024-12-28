@@ -6,6 +6,7 @@ import {
 	Param,
 	Patch,
 	Post,
+	Query,
 	UseGuards,
 } from '@nestjs/common';
 import { ServiceTypeService } from './serviceType.service';
@@ -16,6 +17,8 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
+import { PaginateData, PaginateParams } from '@/types/common.type';
 
 @Controller('service-types')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -31,8 +34,11 @@ export class ServiceTypeController {
 	}
 
 	@Get()
-	findAll(): Promise<ServiceType[]> {
-		return this.serviceTypeService.findAll();
+	@ApiPaginationQuery()
+	async findAll(
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<ServiceType>> {
+		return this.serviceTypeService.findAll(query);
 	}
 
 	@Get(':id')
