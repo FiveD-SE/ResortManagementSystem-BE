@@ -5,6 +5,7 @@ import { ImgurService } from '../imgur/imgur.service';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
 import { User } from './entities/user.entity';
 import { UserRepositoryInterface } from './interfaces/user.interface';
+import { CreateUserRequestDTO } from './dto/request/createUser.request.dto';
 
 @Injectable()
 export class UserService extends BaseServiceAbstract<User> {
@@ -14,6 +15,10 @@ export class UserService extends BaseServiceAbstract<User> {
 		private readonly imgurService: ImgurService,
 	) {
 		super(userRepo);
+	}
+
+	async create(createUserRequestDTO: CreateUserRequestDTO): Promise<User> {
+		return this.userRepo.create(createUserRequestDTO);
 	}
 
 	async getUser(data: string): Promise<User> {
