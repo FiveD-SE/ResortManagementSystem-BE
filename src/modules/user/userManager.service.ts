@@ -6,7 +6,7 @@ import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
 import { UserService } from './user.service';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class UserManagerService extends BaseServiceAbstract<User> {
@@ -23,7 +23,11 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 	async updateUser(id: string, dto: UpdateUserRequestDTO): Promise<User> {
 		await this.userService.getUser(id);
 
-		return await this.update(id, dto);
+		const updateDto = {
+			...dto,
+			serviceTypeId: new Types.ObjectId(dto.serviceTypeId),
+		};
+		return await this.update(id, updateDto);
 	}
 
 	async findAllWithPagination(
@@ -75,5 +79,13 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 			prevPage: page > 1 ? page - 1 : null,
 			pagingCounter: skip + 1,
 		};
+	}
+
+	async deleteUser(id: string): Promise<void> {
+		const user = await this.userService.getUser(id);
+		if (!user) {
+			throw new Error('User not found');
+		}
+		await this.userModel.deleteOne({ _id: id }).exec();
 	}
 }
