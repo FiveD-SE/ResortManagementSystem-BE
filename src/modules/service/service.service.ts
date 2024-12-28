@@ -9,7 +9,7 @@ import { Service } from './entities/service.entity';
 import { CreateServiceRequestDto } from './dto/createService.request.dto';
 import { UpdateServiceRequestDto } from './dto/updateService.request.dto';
 import { ServiceTypeService } from '../serviceType/serviceType.service';
-import { PaginateData, PaginateParams } from '@/types/common.type';
+import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 
 @Injectable()
 export class ServiceService {
@@ -44,15 +44,23 @@ export class ServiceService {
 	}
 
 	async findAll(params: PaginateParams): Promise<PaginateData<Service>> {
-		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
+
 		const skip = (page - 1) * limit;
-		const sortOption = sort === 'asc' ? 1 : -1;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
 
 		const [count, services] = await Promise.all([
 			this.serviceModel.countDocuments().exec(),
 			this.serviceModel
 				.find()
-				.sort({ createdAt: sortOption })
+				.sort(sortOptions as any)
 				.skip(skip)
 				.limit(limit)
 				.exec(),
@@ -61,16 +69,16 @@ export class ServiceService {
 		const totalPages = Math.ceil(count / limit);
 
 		return {
+			docs: services,
+			totalDocs: count,
 			page,
 			limit,
-			totalDocs: count,
+			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
 			nextPage: page < totalPages ? page + 1 : null,
 			prevPage: page > 1 ? page - 1 : null,
-			totalPages,
 			pagingCounter: skip + 1,
-			docs: services,
 		};
 	}
 
@@ -90,26 +98,23 @@ export class ServiceService {
 		serviceTypeId: string,
 		params: PaginateParams,
 	): Promise<PaginateData<Service>> {
-		if (!Types.ObjectId.isValid(serviceTypeId)) {
-			throw new BadRequestException('Invalid ServiceType ID format');
-		}
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
 
-		const serviceType = await this.serviceTypeService.findOne(serviceTypeId);
-		if (!serviceType) {
-			throw new NotFoundException(
-				`Service type with ID ${serviceTypeId} not found`,
-			);
-		}
-
-		const { page = 1, limit = 10, sort = 'desc' } = params;
 		const skip = (page - 1) * limit;
-		const sortOption = sort === 'asc' ? 1 : -1;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
 
 		const [count, services] = await Promise.all([
 			this.serviceModel.countDocuments({ serviceTypeId }).exec(),
 			this.serviceModel
 				.find({ serviceTypeId })
-				.sort({ createdAt: sortOption })
+				.sort(sortOptions as any)
 				.skip(skip)
 				.limit(limit)
 				.exec(),
@@ -118,16 +123,16 @@ export class ServiceService {
 		const totalPages = Math.ceil(count / limit);
 
 		return {
+			docs: services,
+			totalDocs: count,
 			page,
 			limit,
-			totalDocs: count,
+			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
 			nextPage: page < totalPages ? page + 1 : null,
 			prevPage: page > 1 ? page - 1 : null,
-			totalPages,
 			pagingCounter: skip + 1,
-			docs: services,
 		};
 	}
 
@@ -179,5 +184,9 @@ export class ServiceService {
 		if (!result) {
 			throw new NotFoundException(`Service with ID ${id} not found`);
 		}
+	}
+
+	async findByIds(ids: string[]): Promise<Service[]> {
+		return this.serviceModel.find({ _id: { $in: ids } }).exec();
 	}
 }

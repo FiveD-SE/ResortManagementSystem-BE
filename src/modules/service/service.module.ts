@@ -12,5 +12,6 @@ import { ServiceTypeModule } from '../serviceType/serviceType.module';
 	],
 	providers: [ServiceService],
 	controllers: [ServiceController],
+	exports: [ServiceService],
 })
 export class ServiceModule {}

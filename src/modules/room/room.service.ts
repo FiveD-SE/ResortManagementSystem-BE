@@ -13,7 +13,7 @@ import {
 	RoomTypeDocument,
 } from '../roomType/entities/roomType.entity';
 import { ImgurService } from '../imgur/imgur.service';
-import { PaginateParams, PaginateData } from '@/types/common.type';
+import { PaginateParams, PaginateData, SortOrder } from '@/types/common.type';
 import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Rating } from '../rating/entities/rating.entity';
 import { GetRoomsResponseDTO } from './dto/getRooms.response';
@@ -79,37 +79,44 @@ export class RoomService {
 	async findAll(
 		params: PaginateParams,
 	): Promise<PaginateData<GetRoomsResponseDTO>> {
-		const { page, limit, sort } = params;
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
+
 		const skip = (page - 1) * limit;
-		const sortOption = sort === 'asc' ? 1 : -1;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
 
 		const [count, rooms] = await Promise.all([
 			this.roomModel.countDocuments().exec(),
 			this.roomModel
 				.find()
-				.sort({ createdAt: sortOption })
+				.sort(sortOptions as any)
 				.skip(skip)
 				.limit(limit)
 				.exec(),
 		]);
 
 		const totalPages = Math.ceil(count / limit);
-
 		const roomDTOs = await Promise.all(
 			rooms.map((room) => this.mapToRoomDTO(room)),
 		);
 
 		return {
+			docs: roomDTOs,
+			totalDocs: count,
 			page,
 			limit,
-			totalDocs: count,
+			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
 			nextPage: page < totalPages ? page + 1 : null,
 			prevPage: page > 1 ? page - 1 : null,
-			totalPages,
 			pagingCounter: skip + 1,
-			docs: roomDTOs,
 		};
 	}
 
@@ -125,37 +132,44 @@ export class RoomService {
 		roomTypeId: string,
 		params: PaginateParams,
 	): Promise<PaginateData<GetRoomsResponseDTO>> {
-		const { page, limit, sort } = params;
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
+
 		const skip = (page - 1) * limit;
-		const sortOption = sort === 'asc' ? 1 : -1;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
 
 		const [count, rooms] = await Promise.all([
 			this.roomModel.countDocuments({ roomTypeId }).exec(),
 			this.roomModel
 				.find({ roomTypeId })
-				.sort({ createdAt: sortOption })
+				.sort(sortOptions as any)
 				.skip(skip)
 				.limit(limit)
 				.exec(),
 		]);
 
 		const totalPages = Math.ceil(count / limit);
-
 		const roomDTOs = await Promise.all(
 			rooms.map((room) => this.mapToRoomDTO(room)),
 		);
 
 		return {
+			docs: roomDTOs,
+			totalDocs: count,
 			page,
 			limit,
-			totalDocs: count,
+			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
 			nextPage: page < totalPages ? page + 1 : null,
 			prevPage: page > 1 ? page - 1 : null,
-			totalPages,
 			pagingCounter: skip + 1,
-			docs: roomDTOs,
 		};
 	}
 
