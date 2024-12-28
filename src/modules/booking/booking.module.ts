@@ -6,6 +6,7 @@ import { Booking, BookingSchema } from './entities/booking.entity';
 import { RoomModule } from '../room/room.module';
 import { ServiceModule } from '../service/service.module';
 import { PromotionModule } from '../promotion/promotion.module';
+import { InvoiceModule } from '../invoice/invoice.module';
 
 @Module({
 	imports: [
@@ -13,6 +14,7 @@ import { PromotionModule } from '../promotion/promotion.module';
 		RoomModule,
 		ServiceModule,
 		PromotionModule,
+		InvoiceModule,
 	],
 	controllers: [BookingController],
 	providers: [BookingService],

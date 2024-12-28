@@ -4,7 +4,7 @@ import {
 	NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, ObjectId, Types } from 'mongoose';
 import {
 	Booking,
 	BookingDocument,
@@ -18,7 +18,11 @@ import { ServiceStatus } from '../service/enums/service-status.enum';
 import { UserPromotionService } from '../promotion/userPromotion.service';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
+import { Room } from '../room/entities/room.entity';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { CreateInvoiceDto } from '../invoice/dto/createInvoice.dto';
+import { Invoice } from '../invoice/entities/invoice.entity';
+import { InvoiceService } from '../invoice/invoice.service';
 
 @Injectable()
 export class BookingService {
@@ -28,6 +32,7 @@ export class BookingService {
 		private readonly serviceService: ServiceService,
 		private readonly promotionService: PromotionService,
 		private readonly userPromotionService: UserPromotionService,
+		private readonly invoiceService: InvoiceService,
 	) {}
 
 	async createBooking(
@@ -77,8 +82,11 @@ export class BookingService {
 
 			// Create booking services with Pending status
 			bookingServices = services.map((service) => ({
-				serviceId: service._id,
+				serviceId: service._id as ObjectId,
 				status: ServiceStatus.Pending,
+				price: service.price,
+				quantity: 1,
+				name: service.serviceName,
 			}));
 		}
 
@@ -133,10 +141,17 @@ export class BookingService {
 				.sort(sortOptions as any) // Type assertion for mongoose compatibility
 				.skip(skip)
 				.limit(limit)
-				.populate('roomId')
-				.populate('customerId')
+				.populate({
+					path: 'roomId',
+					populate: {
+						path: 'roomTypeId',
+						select: 'typeName', // Select only the typeName field
+					},
+				})
+				.populate('customerId', '-password')
 				.populate('services.serviceId')
 				.populate('promotionId')
+				.populate('roomId.roomTypeId')
 				.exec(),
 			this.bookingModel.countDocuments(filter),
 		]);
@@ -160,8 +175,14 @@ export class BookingService {
 	async getBookingById(id: string): Promise<Booking> {
 		const booking = await this.bookingModel
 			.findById(id)
-			.populate('roomId')
-			.populate('customerId')
+			.populate({
+				path: 'roomId',
+				populate: {
+					path: 'roomTypeId',
+					select: 'typeName', // Select only the typeName field
+				},
+			})
+			.populate({ path: 'customerId', select: '-password' })
 			.populate('services.serviceId')
 			.populate('promotionId')
 			.exec();
@@ -184,6 +205,107 @@ export class BookingService {
 		}
 
 		booking.status = status;
+		await booking.save();
+
+		return booking;
+	}
+
+	async checkIn(id: string): Promise<Booking> {
+		const booking = await this.bookingModel.findById(id);
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${id} not found`);
+		}
+
+		if (booking.status !== BookingStatus.Pending) {
+			throw new BadRequestException('Booking must be pending before check-in');
+		}
+
+		booking.status = BookingStatus.CheckedIn;
+		await booking.save();
+		return booking;
+	}
+
+	async checkoutBooking(bookingId: string): Promise<Invoice> {
+		const booking = await this.bookingModel
+			.findById(bookingId)
+			.populate('roomId')
+			.populate('services.serviceId')
+			.exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		if (booking.status !== BookingStatus.CheckedIn) {
+			throw new BadRequestException(
+				'Booking must be checked in before checkout',
+			);
+		}
+
+		const room = booking.roomId as unknown as Room;
+
+		const items = [
+			{
+				name: room.roomNumber,
+				quantity: 1,
+				price: room.pricePerNight,
+			},
+			...booking.services.map((service) => ({
+				name: service.name,
+				quantity: service.quantity,
+				price: service.price,
+			})),
+		];
+
+		const createInvoiceDto: CreateInvoiceDto = {
+			userId: booking.customerId.toString(),
+			amount: booking.totalAmount,
+			description: 'Thanh toan don hang',
+			returnUrl: 'http://localhost:3000/success.html',
+			cancelUrl: 'http://localhost:3000/cancel.html',
+			issueDate: new Date(),
+			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+			items,
+		};
+
+		booking.status = BookingStatus.CheckedOut;
+		await booking.save();
+
+		return this.invoiceService.createInvoice(createInvoiceDto);
+	}
+
+	async addServiceToBooking(
+		bookingId: string,
+		serviceId: string,
+	): Promise<Booking> {
+		const booking = await this.bookingModel.findById(bookingId).exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		const service = await this.serviceService.findOne(serviceId);
+		if (!service) {
+			throw new NotFoundException(`Service with ID ${serviceId} not found`);
+		}
+
+		const existingService = booking.services.find(
+			(s) => s.serviceId.toString() === serviceId,
+		);
+
+		if (existingService) {
+			existingService.quantity += 1;
+		} else {
+			booking.services.push({
+				serviceId: new Types.ObjectId(serviceId),
+				status: ServiceStatus.Pending,
+				price: service.price,
+				quantity: 1,
+				name: service.serviceName,
+			});
+		}
+
+		booking.totalAmount += service.price;
 		await booking.save();
 
 		return booking;

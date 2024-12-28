@@ -43,7 +43,7 @@ export class RoomService {
 		return {
 			id: room.id,
 			roomNumber: room.roomNumber,
-			roomTypeId: room.roomTypeId,
+			roomTypeId: room.roomTypeId.toString(),
 			status: room.status,
 			pricePerNight: room.pricePerNight,
 			images: room.images,

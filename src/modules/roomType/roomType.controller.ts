@@ -21,8 +21,10 @@ import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+import { Public } from '@/decorators/auth.decorator';
 
 @Controller('room-types')
+@UseGuards(JwtAccessTokenGuard, RolesGuard)
 export class RoomTypeController {
 	constructor(private readonly roomTypeService: RoomTypeService) {}
 
@@ -33,6 +35,7 @@ export class RoomTypeController {
 	}
 
 	@Get()
+	@Public()
 	@ApiPaginationQuery()
 	@ApiOperation({ summary: 'Get all room types with pagination and sorting' })
 	@ApiQuery({

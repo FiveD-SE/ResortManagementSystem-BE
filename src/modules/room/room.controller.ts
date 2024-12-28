@@ -25,8 +25,10 @@ import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Query } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { RoomDetailDTO } from './dto/roomDetail.dto';
+import { Public } from '@/decorators/auth.decorator';
 
 @Controller('rooms')
+@UseGuards(JwtAccessTokenGuard, RolesGuard)
 export class RoomController {
 	constructor(private readonly roomService: RoomService) {}
 
@@ -60,6 +62,7 @@ export class RoomController {
 	}
 
 	@Get()
+	@Public()
 	@ApiPaginationQuery()
 	@ApiQuery({
 		name: 'sortBy',
@@ -93,6 +96,7 @@ export class RoomController {
 	}
 
 	@Get(':id')
+	@Public()
 	@ApiOperation({ summary: 'Get a specific room by ID' })
 	@ApiResponse({
 		status: 200,
@@ -104,6 +108,7 @@ export class RoomController {
 	}
 
 	@Get('roomType/:roomTypeId')
+	@Public()
 	@ApiPaginationQuery()
 	@ApiOperation({ summary: 'Get rooms by Room Type ID with room type names' })
 	@ApiResponse({
@@ -148,6 +153,7 @@ export class RoomController {
 	 * @description Retrieves detailed information for a specific room, including room type data, all ratings, average scores, and rating count.
 	 */
 	@Get(':id/detail')
+	@Public()
 	@ApiOperation({
 		summary:
 			'Get detailed information of a room including ratings, averages, and count',
