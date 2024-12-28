@@ -1,7 +1,6 @@
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { Booking } from '../../booking/entities/booking.entity';
 
 export type InvoiceDocument = HydratedDocument<Invoice>;
 
