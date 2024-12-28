@@ -20,5 +20,6 @@ import { RatingController } from '../rating/rating.controller';
 	],
 	controllers: [RoomController, RatingController],
 	providers: [RoomService, RatingService],
+	exports: [RoomService],
 })
 export class RoomModule {}

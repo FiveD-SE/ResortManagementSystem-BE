@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -17,11 +18,11 @@ import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
-import { PaginateData, PaginateParams } from '@/types/common.type';
+import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Query } from '@nestjs/common';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 @Controller('room-types')
-@UseGuards(JwtAccessTokenGuard, RolesGuard)
 export class RoomTypeController {
 	constructor(private readonly roomTypeService: RoomTypeService) {}
 
@@ -33,7 +34,35 @@ export class RoomTypeController {
 
 	@Get()
 	@ApiPaginationQuery()
-	findAll(@Query() query: PaginateParams): Promise<PaginateData<RoomType>> {
+	@ApiOperation({ summary: 'Get all room types with pagination and sorting' })
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: ['typeName', 'basePrice', 'guestAmount', 'createdAt'],
+		description: 'Field to sort by',
+	})
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: SortOrder,
+		description: 'Sort order (asc/desc)',
+	})
+	async findAll(
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<RoomType>> {
+		const validSortFields = [
+			'typeName',
+			'basePrice',
+			'guestAmount',
+			'createdAt',
+		];
+
+		if (query.sortBy && !validSortFields.includes(query.sortBy)) {
+			throw new BadRequestException(
+				`Sort field must be one of: ${validSortFields.join(', ')}`,
+			);
+		}
+
 		return this.roomTypeService.findAll(query);
 	}
 

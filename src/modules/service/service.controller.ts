@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	Body,
 	Controller,
 	Delete,
@@ -18,7 +19,8 @@ import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
-import { PaginateData, PaginateParams } from '@/types/common.type';
+import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('services')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -33,9 +35,29 @@ export class ServiceController {
 
 	@Get()
 	@ApiPaginationQuery()
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: ['name', 'price', 'status', 'createdAt'],
+		description: 'Field to sort by',
+	})
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: SortOrder,
+		description: 'Sort order (asc/desc)',
+	})
 	async findAll(
 		@Query() query: PaginateParams,
 	): Promise<PaginateData<Service>> {
+		const validSortFields = ['name', 'price', 'status', 'createdAt'];
+
+		if (query.sortBy && !validSortFields.includes(query.sortBy)) {
+			throw new BadRequestException(
+				`Sort field must be one of: ${validSortFields.join(', ')}`,
+			);
+		}
+
 		return this.serviceService.findAll(query);
 	}
 
