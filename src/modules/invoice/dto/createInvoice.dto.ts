@@ -38,4 +38,8 @@ export class CreateInvoiceDto {
 	@IsNotEmpty()
 	@IsArray()
 	items: any[];
+
+	@IsNotEmpty()
+	@IsString()
+	bookingId: string;
 }

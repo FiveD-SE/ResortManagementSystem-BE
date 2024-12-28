@@ -46,6 +46,9 @@ export class Invoice extends BaseEntity {
 
 	@Prop({ required: false, type: Types.ObjectId, ref: 'Booking' })
 	bookingId: Types.ObjectId;
+
+	@Prop({ type: Array })
+	items: any[];
 }
 
 export const InvoiceSchema = SchemaFactory.createForClass(Invoice);

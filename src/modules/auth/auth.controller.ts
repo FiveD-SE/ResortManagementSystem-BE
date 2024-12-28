@@ -53,15 +53,27 @@ export class AuthController {
 	@ApiBody({
 		type: LoginRequestDTO,
 		examples: {
-			user_1: {
+			admin: {
 				value: {
 					email: 'admin@example.com',
 					password: 'Example@123',
 				} as LoginRequestDTO,
 			},
-			user_2: {
+			user: {
 				value: {
 					email: 'user@example.com',
+					password: 'Example@123',
+				} as LoginRequestDTO,
+			},
+			receptionist: {
+				value: {
+					email: 'receptionist@example.com',
+					password: 'Example@123',
+				} as LoginRequestDTO,
+			},
+			service_staff: {
+				value: {
+					email: 'service@example.com',
 					password: 'Example@123',
 				} as LoginRequestDTO,
 			},

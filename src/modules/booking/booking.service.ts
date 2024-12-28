@@ -261,11 +261,12 @@ export class BookingService {
 			userId: booking.customerId.toString(),
 			amount: booking.totalAmount,
 			description: 'Thanh toan don hang',
-			returnUrl: 'http://localhost:3000/success.html',
-			cancelUrl: 'http://localhost:3000/cancel.html',
+			returnUrl: '${process.env.BACKEND_URL}/update-invoice-status',
+			cancelUrl: '${process.env.BACKEND_URL}/update-invoice-status',
 			issueDate: new Date(),
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 			items,
+			bookingId: bookingId,
 		};
 
 		booking.status = BookingStatus.CheckedOut;

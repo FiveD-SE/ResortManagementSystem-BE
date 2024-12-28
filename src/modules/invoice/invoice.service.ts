@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { Invoice, InvoiceDocument } from './entities/invoice.entity';
 import { CreateInvoiceDto } from './dto/createInvoice.dto';
-import { UpdateInvoiceStatusDto } from './dto/updateInvoiceStatus.dto';
 import { payOS } from '@/configs/payOS.config';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
@@ -26,8 +25,15 @@ export class InvoiceService {
 	) {}
 
 	async createInvoice(createInvoiceDto: CreateInvoiceDto): Promise<Invoice> {
-		const { amount, description, returnUrl, cancelUrl, userId, items } =
-			createInvoiceDto;
+		const {
+			amount,
+			description,
+			returnUrl,
+			cancelUrl,
+			userId,
+			items,
+			bookingId,
+		} = createInvoiceDto;
 
 		if (amount <= 0) {
 			throw {
@@ -47,6 +53,7 @@ export class InvoiceService {
 			issueDate: new Date(),
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 			items,
+			bookingId: bookingId,
 		});
 
 		await newInvoice.save();
@@ -73,5 +80,37 @@ export class InvoiceService {
 			console.error('Error creating payment link:', error);
 			throw new BadRequestException('Failed to create payment link');
 		}
+	}
+
+	async getInvoiceById(id: string): Promise<Invoice> {
+		const invoice = await this.invoiceModel.findById(id).exec();
+		if (!invoice) {
+			throw new NotFoundException(`Invoice with ID ${id} not found`);
+		}
+		const payment = await payOS.getPaymentLinkInformation(invoice.orderCode);
+
+		if (payment.status !== 'PENDING') {
+			invoice.status = payment.status;
+			await invoice.save();
+		}
+
+		return invoice;
+	}
+
+	async updateInvoiceStatusByOrderCode(
+		orderCode: number,
+		status: string,
+	): Promise<Invoice> {
+		const invoice = await this.invoiceModel.findOne({ orderCode }).exec();
+		if (!invoice) {
+			throw new NotFoundException(
+				`Invoice with orderCode ${orderCode} not found`,
+			);
+		}
+
+		invoice.status = status;
+		await invoice.save();
+
+		return invoice;
 	}
 }
