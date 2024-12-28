@@ -14,14 +14,43 @@ import {
 } from '../roomType/entities/roomType.entity';
 import { ImgurService } from '../imgur/imgur.service';
 import { PaginateParams, PaginateData } from '@/types/common.type';
+import { RoomDetailDTO } from './dto/roomDetail.dto';
+import { Rating } from '../rating/entities/rating.entity';
+import { GetRoomsResponseDTO } from './dto/getRooms.response';
 
 @Injectable()
 export class RoomService {
 	constructor(
 		@InjectModel(Room.name) private roomModel: Model<RoomDocument>,
 		@InjectModel(RoomType.name) private roomTypeModel: Model<RoomTypeDocument>,
+		@InjectModel(Rating.name) private ratingModel: Model<Rating>,
 		private readonly imgurService: ImgurService,
 	) {}
+
+	/**
+	 * Maps a Room document to RoomDTO.
+	 * @param room The Room document.
+	 * @returns The RoomDTO.
+	 */
+	private async mapToRoomDTO(room: RoomDocument): Promise<GetRoomsResponseDTO> {
+		const roomType = await this.roomTypeModel.findById(room.roomTypeId).exec();
+		if (!roomType) {
+			throw new NotFoundException(
+				`RoomType with ID ${room.roomTypeId} not found`,
+			);
+		}
+
+		return {
+			id: room.id,
+			roomNumber: room.roomNumber,
+			roomTypeId: room.roomTypeId,
+			status: room.status,
+			pricePerNight: room.pricePerNight,
+			images: room.images,
+			averageRating: room.averageRating,
+			roomTypeName: roomType.typeName,
+		};
+	}
 
 	async create(
 		createRoomDto: CreateRoomDTO,
@@ -47,12 +76,14 @@ export class RoomService {
 		return newRoom.save();
 	}
 
-	async findAll(params: PaginateParams): Promise<PaginateData<Room>> {
+	async findAll(
+		params: PaginateParams,
+	): Promise<PaginateData<GetRoomsResponseDTO>> {
 		const { page, limit, sort } = params;
 		const skip = (page - 1) * limit;
 		const sortOption = sort === 'asc' ? 1 : -1;
 
-		const [count, items] = await Promise.all([
+		const [count, rooms] = await Promise.all([
 			this.roomModel.countDocuments().exec(),
 			this.roomModel
 				.find()
@@ -64,6 +95,10 @@ export class RoomService {
 
 		const totalPages = Math.ceil(count / limit);
 
+		const roomDTOs = await Promise.all(
+			rooms.map((room) => this.mapToRoomDTO(room)),
+		);
+
 		return {
 			page,
 			limit,
@@ -74,7 +109,7 @@ export class RoomService {
 			prevPage: page > 1 ? page - 1 : null,
 			totalPages,
 			pagingCounter: skip + 1,
-			docs: items,
+			docs: roomDTOs,
 		};
 	}
 
@@ -89,12 +124,12 @@ export class RoomService {
 	async findByRoomTypeId(
 		roomTypeId: string,
 		params: PaginateParams,
-	): Promise<PaginateData<Room>> {
+	): Promise<PaginateData<GetRoomsResponseDTO>> {
 		const { page, limit, sort } = params;
 		const skip = (page - 1) * limit;
 		const sortOption = sort === 'asc' ? 1 : -1;
 
-		const [count, items] = await Promise.all([
+		const [count, rooms] = await Promise.all([
 			this.roomModel.countDocuments({ roomTypeId }).exec(),
 			this.roomModel
 				.find({ roomTypeId })
@@ -106,6 +141,10 @@ export class RoomService {
 
 		const totalPages = Math.ceil(count / limit);
 
+		const roomDTOs = await Promise.all(
+			rooms.map((room) => this.mapToRoomDTO(room)),
+		);
+
 		return {
 			page,
 			limit,
@@ -116,7 +155,7 @@ export class RoomService {
 			prevPage: page > 1 ? page - 1 : null,
 			totalPages,
 			pagingCounter: skip + 1,
-			docs: items,
+			docs: roomDTOs,
 		};
 	}
 
@@ -165,5 +204,107 @@ export class RoomService {
 		if (!result) {
 			throw new NotFoundException(`Room with ID ${id} not found`);
 		}
+	}
+
+	/**
+	 * Retrieves detailed information for a specific room, including room type data and all ratings.
+	 * Also includes average scores for each rating category and the total number of ratings.
+	 * @param id The ID of the room.
+	 * @returns Detailed room information with ratings, averages, and count.
+	 */
+	async getRoomDetail(id: string): Promise<RoomDetailDTO> {
+		const room = await this.roomModel.findById(id).exec();
+		if (!room) {
+			throw new NotFoundException(`Room with ID ${id} not found`);
+		}
+
+		const roomType = await this.roomTypeModel.findById(room.roomTypeId).exec();
+		if (!roomType) {
+			throw new NotFoundException(
+				`RoomType with ID ${room.roomTypeId} not found`,
+			);
+		}
+
+		const ratings = await this.ratingModel.find({ roomId: room._id }).exec();
+
+		const totalRatings = ratings.length;
+		const averageScores = {
+			cleanliness: 0,
+			accuracy: 0,
+			checkIn: 0,
+			communication: 0,
+			location: 0,
+			value: 0,
+		};
+
+		if (totalRatings > 0) {
+			ratings.forEach((rating) => {
+				averageScores.cleanliness += rating.cleanliness;
+				averageScores.accuracy += rating.accuracy;
+				averageScores.checkIn += rating.checkIn;
+				averageScores.communication += rating.communication;
+				averageScores.location += rating.location;
+				averageScores.value += rating.value;
+			});
+
+			averageScores.cleanliness = parseFloat(
+				(averageScores.cleanliness / totalRatings).toFixed(2),
+			);
+			averageScores.accuracy = parseFloat(
+				(averageScores.accuracy / totalRatings).toFixed(2),
+			);
+			averageScores.checkIn = parseFloat(
+				(averageScores.checkIn / totalRatings).toFixed(2),
+			);
+			averageScores.communication = parseFloat(
+				(averageScores.communication / totalRatings).toFixed(2),
+			);
+			averageScores.location = parseFloat(
+				(averageScores.location / totalRatings).toFixed(2),
+			);
+			averageScores.value = parseFloat(
+				(averageScores.value / totalRatings).toFixed(2),
+			);
+		}
+
+		const ratingCounts = {
+			oneStar: 0,
+			twoStars: 0,
+			threeStars: 0,
+			fourStars: 0,
+			fiveStars: 0,
+		};
+
+		ratings.forEach((rating) => {
+			const average = Math.round(rating.average);
+			switch (average) {
+				case 1:
+					ratingCounts.oneStar += 1;
+					break;
+				case 2:
+					ratingCounts.twoStars += 1;
+					break;
+				case 3:
+					ratingCounts.threeStars += 1;
+					break;
+				case 4:
+					ratingCounts.fourStars += 1;
+					break;
+				case 5:
+					ratingCounts.fiveStars += 1;
+					break;
+				default:
+					break;
+			}
+		});
+
+		return {
+			room,
+			roomType,
+			ratings,
+			averageScores,
+			ratingCount: totalRatings,
+			ratingCounts,
+		};
 	}
 }
