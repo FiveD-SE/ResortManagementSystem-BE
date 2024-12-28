@@ -29,6 +29,7 @@ export class BookingController {
 	constructor(private readonly bookingService: BookingService) {}
 
 	@Post(':roomId')
+	@Roles(UserRole.User)
 	@ApiOperation({ summary: 'Create a new booking' })
 	@ApiResponse({ status: 201, description: 'Booking created successfully' })
 	async createBooking(
@@ -66,10 +67,22 @@ export class BookingController {
 	}
 
 	@Get(':id')
-	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
 	@ApiOperation({ summary: 'Get booking by ID' })
-	async getBookingById(@Param('id') id: string): Promise<Booking> {
-		return this.bookingService.getBookingById(id);
+	async getBookingById(
+		@Param('id') id: string,
+		@Req() req: RequestWithUser,
+	): Promise<Booking> {
+		const booking = await this.bookingService.getBookingById(id);
+		if (
+			req.user.role === UserRole.User &&
+			booking.customerId._id.toString() !== req.user.id
+		) {
+			throw new BadRequestException(
+				'You are not authorized to view this booking',
+			);
+		}
+		return booking;
 	}
 
 	@Patch(':id/checkin')
