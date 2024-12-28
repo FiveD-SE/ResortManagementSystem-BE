@@ -1,6 +1,7 @@
 import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { isValidObjectId } from 'mongoose';
+import * as bcrypt from 'bcryptjs';
 import { ImgurService } from '../imgur/imgur.service';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
 import { User } from './entities/user.entity';
@@ -9,6 +10,8 @@ import { CreateUserRequestDTO } from './dto/request/createUser.request.dto';
 
 @Injectable()
 export class UserService extends BaseServiceAbstract<User> {
+	private readonly SALT_ROUND = 10;
+
 	constructor(
 		@Inject('UsersRepositoryInterface')
 		private readonly userRepo: UserRepositoryInterface,
@@ -18,7 +21,14 @@ export class UserService extends BaseServiceAbstract<User> {
 	}
 
 	async create(createUserRequestDTO: CreateUserRequestDTO): Promise<User> {
-		return this.userRepo.create(createUserRequestDTO);
+		const hashedPassword = await bcrypt.hash(
+			createUserRequestDTO.password,
+			this.SALT_ROUND,
+		);
+		return this.userRepo.create({
+			...createUserRequestDTO,
+			password: hashedPassword,
+		});
 	}
 
 	async getUser(data: string): Promise<User> {
