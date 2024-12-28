@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { RoomService } from './room.service';
 import { RoomController } from './room.controller';
@@ -8,6 +8,7 @@ import { ImgurModule } from '../imgur/imgur.module';
 import { Rating, RatingSchema } from '../rating/entities/rating.entity';
 import { RatingService } from '../rating/rating.service';
 import { RatingController } from '../rating/rating.controller';
+import { BookingModule } from '../booking/booking.module';
 
 @Module({
 	imports: [
@@ -17,6 +18,7 @@ import { RatingController } from '../rating/rating.controller';
 		]),
 		MongooseModule.forFeature([{ name: Rating.name, schema: RatingSchema }]),
 		ImgurModule,
+		forwardRef(() => BookingModule),
 	],
 	controllers: [RoomController, RatingController],
 	providers: [RoomService, RatingService],

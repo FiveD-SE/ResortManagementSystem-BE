@@ -4,7 +4,7 @@ import {
 	BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
 import { Room, RoomDocument } from './entities/room.entity';
@@ -17,6 +17,7 @@ import { PaginateParams, PaginateData, SortOrder } from '@/types/common.type';
 import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Rating } from '../rating/entities/rating.entity';
 import { GetRoomsResponseDTO } from './dto/getRooms.response';
+import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 
 @Injectable()
 export class RoomService {
@@ -25,6 +26,7 @@ export class RoomService {
 		@InjectModel(RoomType.name) private roomTypeModel: Model<RoomTypeDocument>,
 		@InjectModel(Rating.name) private ratingModel: Model<Rating>,
 		private readonly imgurService: ImgurService,
+		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
 	) {}
 
 	/**
@@ -32,7 +34,10 @@ export class RoomService {
 	 * @param room The Room document.
 	 * @returns The RoomDTO.
 	 */
-	private async mapToRoomDTO(room: RoomDocument): Promise<GetRoomsResponseDTO> {
+	private async mapToRoomDTO(
+		room: RoomDocument,
+		bookingCount: number,
+	): Promise<GetRoomsResponseDTO> {
 		const roomType = await this.roomTypeModel.findById(room.roomTypeId).exec();
 		if (!roomType) {
 			throw new NotFoundException(
@@ -49,6 +54,7 @@ export class RoomService {
 			images: room.images,
 			averageRating: room.averageRating,
 			roomTypeName: roomType.typeName,
+			bookingCount: bookingCount,
 		};
 	}
 
@@ -94,16 +100,104 @@ export class RoomService {
 		const [count, rooms] = await Promise.all([
 			this.roomModel.countDocuments().exec(),
 			this.roomModel
-				.find()
-				.sort(sortOptions as any)
-				.skip(skip)
-				.limit(limit)
+				.aggregate([
+					{
+						$lookup: {
+							from: 'bookings',
+							let: { room_id: { $toString: '$_id' } },
+							pipeline: [
+								{
+									$match: {
+										$expr: {
+											$eq: ['$roomId', '$$room_id'],
+										},
+									},
+								},
+							],
+							as: 'bookings',
+						},
+					},
+					{
+						$addFields: {
+							bookingCount: { $size: '$bookings' },
+						},
+					},
+					{ $sort: sortOptions },
+					{ $skip: skip },
+					{ $limit: limit },
+				])
 				.exec(),
 		]);
 
 		const totalPages = Math.ceil(count / limit);
 		const roomDTOs = await Promise.all(
-			rooms.map((room) => this.mapToRoomDTO(room)),
+			rooms.map((room) => this.mapToRoomDTO(room, room.bookingCount)),
+		);
+
+		return {
+			docs: roomDTOs,
+			totalDocs: count,
+			page,
+			limit,
+			totalPages,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			pagingCounter: skip + 1,
+		};
+	}
+
+	async findByRoomTypeId(
+		roomTypeId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<GetRoomsResponseDTO>> {
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
+
+		const skip = (page - 1) * limit;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
+
+		const [count, rooms] = await Promise.all([
+			this.roomModel.countDocuments().exec(),
+			this.roomModel
+				.aggregate([
+					{
+						$lookup: {
+							from: 'bookings',
+							let: { room_id: { $toString: '$_id' } },
+							pipeline: [
+								{
+									$match: {
+										$expr: {
+											$eq: ['$roomId', '$$room_id'],
+										},
+									},
+								},
+							],
+							as: 'bookings',
+						},
+					},
+					{
+						$addFields: {
+							bookingCount: { $size: '$bookings' },
+						},
+					},
+					{ $sort: sortOptions },
+					{ $skip: skip },
+					{ $limit: limit },
+				])
+				.exec(),
+		]);
+		const totalPages = Math.ceil(count / limit);
+		const roomDTOs = await Promise.all(
+			rooms.map((room) => this.mapToRoomDTO(room, room.bookingCount)),
 		);
 
 		return {
@@ -126,51 +220,6 @@ export class RoomService {
 			throw new NotFoundException(`Room with ID ${id} not found`);
 		}
 		return room;
-	}
-
-	async findByRoomTypeId(
-		roomTypeId: string,
-		params: PaginateParams,
-	): Promise<PaginateData<GetRoomsResponseDTO>> {
-		const {
-			page = 1,
-			limit = 10,
-			sortBy = 'createdAt',
-			sortOrder = SortOrder.DESC,
-		} = params;
-
-		const skip = (page - 1) * limit;
-		const sortOptions: Record<string, 1 | -1> = {
-			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
-		};
-
-		const [count, rooms] = await Promise.all([
-			this.roomModel.countDocuments({ roomTypeId }).exec(),
-			this.roomModel
-				.find({ roomTypeId })
-				.sort(sortOptions as any)
-				.skip(skip)
-				.limit(limit)
-				.exec(),
-		]);
-
-		const totalPages = Math.ceil(count / limit);
-		const roomDTOs = await Promise.all(
-			rooms.map((room) => this.mapToRoomDTO(room)),
-		);
-
-		return {
-			docs: roomDTOs,
-			totalDocs: count,
-			page,
-			limit,
-			totalPages,
-			hasNextPage: page < totalPages,
-			hasPrevPage: page > 1,
-			nextPage: page < totalPages ? page + 1 : null,
-			prevPage: page > 1 ? page - 1 : null,
-			pagingCounter: skip + 1,
-		};
 	}
 
 	async update(
@@ -312,6 +361,12 @@ export class RoomService {
 			}
 		});
 
+		const bookings = await this.bookingModel.find({ roomId: room.id }).exec();
+		const occupiedDates = bookings.map((booking) => ({
+			checkinDate: booking.checkinDate,
+			checkoutDate: booking.checkoutDate,
+		}));
+
 		return {
 			room,
 			roomType,
@@ -319,6 +374,7 @@ export class RoomService {
 			averageScores,
 			ratingCount: totalRatings,
 			ratingCounts,
+			occupiedDates,
 		};
 	}
 }

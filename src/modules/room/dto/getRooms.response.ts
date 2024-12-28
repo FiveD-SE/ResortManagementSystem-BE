@@ -28,4 +28,7 @@ export class GetRoomsResponseDTO {
 
 	@ApiProperty({ description: 'Room Type Name' })
 	roomTypeName: string;
+
+	@ApiProperty({ description: 'Booking Count' })
+	bookingCount: number;
 }

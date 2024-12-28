@@ -67,7 +67,14 @@ export class RoomController {
 	@ApiQuery({
 		name: 'sortBy',
 		required: false,
-		enum: ['roomNumber', 'status', 'pricePerNight', 'createdAt'],
+		enum: [
+			'roomNumber',
+			'status',
+			'pricePerNight',
+			'createdAt',
+			'averageRating',
+			'bookingCount',
+		],
 		description: 'Field to sort by',
 	})
 	@ApiQuery({
@@ -84,6 +91,8 @@ export class RoomController {
 			'status',
 			'pricePerNight',
 			'createdAt',
+			'averageRating',
+			'bookingCount',
 		];
 
 		if (query.sortBy && !validSortFields.includes(query.sortBy)) {
@@ -110,6 +119,25 @@ export class RoomController {
 	@Get('roomType/:roomTypeId')
 	@Public()
 	@ApiPaginationQuery()
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: [
+			'roomNumber',
+			'status',
+			'pricePerNight',
+			'createdAt',
+			'averageRating',
+			'bookingCount',
+		],
+		description: 'Field to sort by',
+	})
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: SortOrder,
+		description: 'Sort order (asc/desc)',
+	})
 	@ApiOperation({ summary: 'Get rooms by Room Type ID with room type names' })
 	@ApiResponse({
 		status: 200,
@@ -120,6 +148,21 @@ export class RoomController {
 		@Param('roomTypeId') roomTypeId: string,
 		@Query() query: PaginateParams,
 	): Promise<PaginateData<GetRoomsResponseDTO>> {
+		const validSortFields = [
+			'roomNumber',
+			'status',
+			'pricePerNight',
+			'createdAt',
+			'averageRating',
+			'bookingCount',
+		];
+
+		if (query.sortBy && !validSortFields.includes(query.sortBy)) {
+			throw new BadRequestException(
+				`Sort field must be one of: ${validSortFields.join(', ')}`,
+			);
+		}
+
 		return this.roomService.findByRoomTypeId(roomTypeId, query);
 	}
 

@@ -62,4 +62,17 @@ export class RoomDetailDTO {
 		fourStars: number;
 		fiveStars: number;
 	};
+
+	@ApiProperty({
+		description: 'Occupied dates for the room',
+		type: Array,
+		items: {
+			type: 'object',
+			properties: {
+				checkinDate: { type: 'string', format: 'date-time' },
+				checkoutDate: { type: 'string', format: 'date-time' },
+			},
+		},
+	})
+	occupiedDates: { checkinDate: Date; checkoutDate: Date }[];
 }
