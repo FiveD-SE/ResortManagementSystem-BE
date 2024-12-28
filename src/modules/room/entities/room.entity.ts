@@ -1,6 +1,7 @@
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
+import { Rating } from '../../rating/entities/rating.entity';
 
 export type RoomDocument = HydratedDocument<Room>;
 
@@ -32,6 +33,12 @@ export class Room extends BaseEntity {
 
 	@Prop({ type: [String], default: [] })
 	images: string[];
+
+	@Prop({ type: [{ type: Types.ObjectId, ref: 'Rating' }], default: [] })
+	ratings: Types.ObjectId[];
+
+	@Prop({ type: Number, default: 0 })
+	averageRating: number;
 }
 
 export const RoomSchema = SchemaFactory.createForClass(Room);

@@ -7,6 +7,8 @@ import * as paginate from 'mongoose-paginate-v2';
 export enum UserRole {
 	Admin = 'admin',
 	User = 'user',
+	Service_Staff = 'service_staff',
+	Receptionist = 'receptionist',
 }
 
 export type UserDocument = HydratedDocument<User>;

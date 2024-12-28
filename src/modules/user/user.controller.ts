@@ -8,6 +8,7 @@ import {
 	Get,
 	Param,
 	Patch,
+	Post,
 	Req,
 	UploadedFile,
 	UseGuards,
@@ -16,8 +17,10 @@ import {
 import { ApiOkResponse } from '@nestjs/swagger';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { UserService } from './user.service';
+import { CreateUserRequestDTO } from './dto/request/createUser.request.dto';
+import { Roles } from '@/decorators/roles.decorator';
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
 @Controller('users')
 export class UserController {
@@ -26,6 +29,14 @@ export class UserController {
 	@Get(':userID')
 	findOne(@Param('userID') id: string) {
 		return this.userService.findByID(id);
+	}
+
+	@Post()
+	@Roles(UserRole.Admin)
+	async create(
+		@Body() createUserRequestDTO: CreateUserRequestDTO,
+	): Promise<User> {
+		return this.userService.create(createUserRequestDTO);
 	}
 
 	@Patch('change-profile')
