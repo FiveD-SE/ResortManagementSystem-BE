@@ -7,6 +7,7 @@ import {
 	Req,
 	Get,
 	Query,
+	Patch,
 } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CreateBookingDTO } from './dto/createBooking.dto';
@@ -65,5 +66,12 @@ export class BookingController {
 	@ApiOperation({ summary: 'Get booking by ID' })
 	async getBookingById(@Param('id') id: string): Promise<Booking> {
 		return this.bookingService.getBookingById(id);
+	}
+
+	@Patch(':id/checkin')
+	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@ApiOperation({ summary: 'Check in a booking (Admin/Receptionist only)' })
+	async checkIn(@Param('id') id: string): Promise<Booking> {
+		return this.bookingService.checkIn(id);
 	}
 }

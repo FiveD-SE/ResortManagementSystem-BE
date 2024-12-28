@@ -188,4 +188,14 @@ export class BookingService {
 
 		return booking;
 	}
+
+	async checkIn(id: string): Promise<Booking> {
+		const booking = await this.bookingModel.findById(id);
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${id} not found`);
+		}
+		booking.status = BookingStatus.CheckedIn;
+		await booking.save();
+		return booking;
+	}
 }
