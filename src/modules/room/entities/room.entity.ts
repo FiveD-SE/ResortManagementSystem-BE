@@ -22,8 +22,8 @@ export class Room extends BaseEntity {
 	@Prop({ required: true, maxlength: 5 })
 	roomNumber: string;
 
-	@Prop({ required: true })
-	roomTypeId: string;
+	@Prop({ required: true, type: Types.ObjectId, ref: 'RoomType' })
+	roomTypeId: Types.ObjectId;
 
 	@Prop({ required: true, enum: RoomStatus })
 	status: RoomStatus;

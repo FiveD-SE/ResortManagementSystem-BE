@@ -9,6 +9,15 @@ export class BookingService {
 
 	@Prop({ required: true, enum: ServiceStatus, default: ServiceStatus.Pending })
 	status: ServiceStatus;
+
+	@Prop({ required: true })
+	quantity: number;
+
+	@Prop({ required: true })
+	price: number;
+
+	@Prop({ required: true })
+	name: string;
 }
 
 export const BookingServiceSchema =
