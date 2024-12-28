@@ -1,12 +1,12 @@
 import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
-import { Inject, Injectable } from '@nestjs/common';
-import { User, UserDocument } from './entities/user.entity';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { User, UserDocument, UserRole } from './entities/user.entity';
 import { UserRepositoryInterface } from './interfaces/user.interface';
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
 import { UserService } from './user.service';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class UserManagerService extends BaseServiceAbstract<User> {
@@ -21,9 +21,46 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 	}
 
 	async updateUser(id: string, dto: UpdateUserRequestDTO): Promise<User> {
-		await this.userService.getUser(id);
+		if (!Types.ObjectId.isValid(id)) {
+			throw new BadRequestException('Invalid ID format');
+		}
 
-		return await this.update(id, dto);
+		const existingUser = await this.userService.getUser(id);
+
+		if (!existingUser) {
+			throw new BadRequestException('User not found');
+		}
+
+		const updateDto: any = { ...dto };
+
+		if (dto.role === UserRole.Service_Staff) {
+			if (!dto.serviceTypeId) {
+				throw new BadRequestException(
+					'ServiceTypeId is required for service_staff role.',
+				);
+			}
+			if (!Types.ObjectId.isValid(dto.serviceTypeId)) {
+				throw new BadRequestException('Invalid ID format');
+			}
+
+			updateDto.serviceTypeId = new Types.ObjectId(dto.serviceTypeId);
+		} else {
+			updateDto.serviceTypeId = undefined;
+		}
+
+		const updatedUser = await this.update(id, updateDto);
+
+		if (updatedUser.role !== UserRole.Service_Staff) {
+			await this.userModel
+				.updateOne({ _id: id }, { $unset: { serviceTypeId: '' } })
+				.exec();
+		}
+
+		if (updatedUser.serviceTypeId) {
+			(updatedUser as any).serviceTypeId = updatedUser.serviceTypeId.toString();
+		}
+
+		return updatedUser;
 	}
 
 	async findAllWithPagination(
@@ -61,6 +98,12 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 				.exec(),
 		]);
 
+		users.forEach((user) => {
+			if (user.serviceTypeId) {
+				(user as any).serviceTypeId = user.serviceTypeId.toString();
+			}
+		});
+
 		const totalPages = Math.ceil(count / limit);
 
 		return {
@@ -75,5 +118,13 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 			prevPage: page > 1 ? page - 1 : null,
 			pagingCounter: skip + 1,
 		};
+	}
+
+	async deleteUser(id: string): Promise<void> {
+		const user = await this.userService.getUser(id);
+		if (!user) {
+			throw new Error('User not found');
+		}
+		await this.userModel.deleteOne({ _id: id }).exec();
 	}
 }

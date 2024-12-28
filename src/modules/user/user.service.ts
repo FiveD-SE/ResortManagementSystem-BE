@@ -1,10 +1,10 @@
 import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { isValidObjectId } from 'mongoose';
+import { isValidObjectId, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { ImgurService } from '../imgur/imgur.service';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { UserRepositoryInterface } from './interfaces/user.interface';
 import { CreateUserRequestDTO } from './dto/request/createUser.request.dto';
 
@@ -25,10 +25,35 @@ export class UserService extends BaseServiceAbstract<User> {
 			createUserRequestDTO.password,
 			this.SALT_ROUND,
 		);
-		return this.userRepo.create({
+
+		const userData: any = {
 			...createUserRequestDTO,
 			password: hashedPassword,
-		});
+		};
+
+		if (createUserRequestDTO.role === UserRole.Service_Staff) {
+			if (!createUserRequestDTO.serviceTypeId) {
+				throw new BadRequestException(
+					'ServiceTypeId is required for service_staff role.',
+				);
+			}
+			if (!Types.ObjectId.isValid(createUserRequestDTO.serviceTypeId)) {
+				throw new BadRequestException('Invalid ID format');
+			}
+			userData.serviceTypeId = new Types.ObjectId(
+				createUserRequestDTO.serviceTypeId,
+			);
+		} else {
+			delete userData.serviceTypeId;
+		}
+
+		const createdUser = await this.userRepo.create(userData);
+
+		if (createdUser.serviceTypeId) {
+			(createdUser as any).serviceTypeId = createdUser.serviceTypeId.toString();
+		}
+
+		return createdUser;
 	}
 
 	async getUser(data: string): Promise<User> {

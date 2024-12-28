@@ -4,6 +4,7 @@ import {
 	BadRequestException,
 	Body,
 	Controller,
+	Delete,
 	Get,
 	Param,
 	Patch,
@@ -11,10 +12,10 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
-import { User } from './entities/user.entity';
+import { User, UserRole } from './entities/user.entity';
 import { UserManagerService } from './userManager.service';
 import {
-	ApiOkResponse,
+	ApiBody,
 	ApiOperation,
 	ApiParam,
 	ApiQuery,
@@ -22,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { Roles } from '@/decorators/roles.decorator';
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
 @Controller('admin/users')
 @ApiTags('User')
@@ -88,11 +90,34 @@ export class UserManagerController {
 	}
 
 	@Patch(':userID')
-	@ApiOkResponse({ type: User })
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Update user information',
+	})
+	@ApiParam({
+		name: 'userID',
+		required: true,
+		description: 'ID of the user to update',
+	})
+	@ApiBody({ type: UpdateUserRequestDTO })
 	updateUser(
 		@Param('userID') userID: string,
 		@Body() dto: UpdateUserRequestDTO,
 	): Promise<User> {
 		return this.userManagerService.updateUser(userID, dto);
+	}
+
+	@Delete(':userID')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Delete user',
+	})
+	@ApiParam({
+		name: 'userID',
+		required: true,
+		description: 'ID of the user to delete',
+	})
+	deleteUser(@Param('userID') userID: string): Promise<void> {
+		return this.userManagerService.deleteUser(userID);
 	}
 }

@@ -21,4 +21,8 @@ export class UpdateUserRequestDTO {
 	@IsOptional()
 	@IsBoolean()
 	isActive: boolean;
+
+	@IsOptional()
+	@IsString()
+	serviceTypeId: string;
 }
