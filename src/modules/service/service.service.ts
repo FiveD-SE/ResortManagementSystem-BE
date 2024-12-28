@@ -9,6 +9,7 @@ import { Service } from './entities/service.entity';
 import { CreateServiceRequestDto } from './dto/createService.request.dto';
 import { UpdateServiceRequestDto } from './dto/updateService.request.dto';
 import { ServiceTypeService } from '../serviceType/serviceType.service';
+import { PaginateData, PaginateParams } from '@/types/common.type';
 
 @Injectable()
 export class ServiceService {
@@ -42,8 +43,35 @@ export class ServiceService {
 		}
 	}
 
-	async findAll(): Promise<Service[]> {
-		return this.serviceModel.find().exec();
+	async findAll(params: PaginateParams): Promise<PaginateData<Service>> {
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, services] = await Promise.all([
+			this.serviceModel.countDocuments().exec(),
+			this.serviceModel
+				.find()
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: services,
+		};
 	}
 
 	async findOne(id: string): Promise<Service> {
@@ -58,31 +86,49 @@ export class ServiceService {
 		return service;
 	}
 
-	async findByServiceTypeId(serviceTypeId: string): Promise<Service[]> {
+	async findByServiceTypeId(
+		serviceTypeId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<Service>> {
 		if (!Types.ObjectId.isValid(serviceTypeId)) {
 			throw new BadRequestException('Invalid ServiceType ID format');
 		}
 
-		if (serviceTypeId) {
-			const serviceType = await this.serviceTypeService.findOne(serviceTypeId);
-			if (!serviceType) {
-				throw new NotFoundException(
-					`Service with Service type ID ${serviceTypeId} not found`,
-				);
-			}
-		}
-
-		const services = await this.serviceModel
-			.find({ serviceTypeId: serviceTypeId })
-			.exec();
-
-		if (!services || services.length === 0) {
+		const serviceType = await this.serviceTypeService.findOne(serviceTypeId);
+		if (!serviceType) {
 			throw new NotFoundException(
-				`No services found for ServiceType ID ${serviceTypeId}`,
+				`Service type with ID ${serviceTypeId} not found`,
 			);
 		}
 
-		return services;
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, services] = await Promise.all([
+			this.serviceModel.countDocuments({ serviceTypeId }).exec(),
+			this.serviceModel
+				.find({ serviceTypeId })
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: services,
+		};
 	}
 
 	async update(

@@ -11,6 +11,7 @@ import {
 	ServiceType,
 	ServiceTypeDocument,
 } from './entities/serviceType.entity';
+import { PaginateData, PaginateParams } from '@/types/common.type';
 
 @Injectable()
 export class ServiceTypeService {
@@ -35,8 +36,35 @@ export class ServiceTypeService {
 		}
 	}
 
-	async findAll(): Promise<ServiceType[]> {
-		return this.serviceTypeModel.find().exec();
+	async findAll(params: PaginateParams): Promise<PaginateData<ServiceType>> {
+		const { page = 1, limit = 10, sort = 'desc' } = params;
+		const skip = (page - 1) * limit;
+		const sortOption = sort === 'asc' ? 1 : -1;
+
+		const [count, serviceTypes] = await Promise.all([
+			this.serviceTypeModel.countDocuments().exec(),
+			this.serviceTypeModel
+				.find()
+				.sort({ createdAt: sortOption })
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			page,
+			limit,
+			totalDocs: count,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			totalPages,
+			pagingCounter: skip + 1,
+			docs: serviceTypes,
+		};
 	}
 
 	async findOne(id: string): Promise<ServiceType> {
