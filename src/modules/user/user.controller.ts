@@ -27,8 +27,9 @@ export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Get(':userID')
+	@Roles(UserRole.Admin)
 	findOne(@Param('userID') id: string) {
-		return this.userService.findByID(id);
+		return this.userService.getUser(id);
 	}
 
 	@Post()
