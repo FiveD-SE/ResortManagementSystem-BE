@@ -213,4 +213,25 @@ export class BookingController {
 	): Promise<Booking> {
 		return this.bookingService.updateBookingServiceStatus(bookingServiceId);
 	}
+
+	@Get('services/status-count')
+	@Roles(UserRole.Admin, UserRole.Service_Staff)
+	@ApiOperation({ summary: 'Get count of service by service status' })
+	@ApiResponse({
+		status: 200,
+		description: 'Count of booking service by status',
+		schema: {
+			type: 'object',
+			properties: {
+				pending: { type: 'number' },
+				served: { type: 'number' },
+			},
+		},
+	})
+	async getBookingServiceCountByStatus(): Promise<{
+		pending: number;
+		served: number;
+	}> {
+		return this.bookingService.getServiceStatusCount();
+	}
 }

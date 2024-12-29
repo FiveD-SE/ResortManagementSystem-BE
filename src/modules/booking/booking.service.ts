@@ -424,6 +424,24 @@ export class BookingService {
 		};
 	}
 
+	async getServiceStatusCount(): Promise<{
+		pending: number;
+		served: number;
+	}> {
+		const pending = await this.bookingModel.countDocuments({
+			'services.status': 'Pending',
+		});
+
+		const served = await this.bookingModel.countDocuments({
+			'services.status': 'Served',
+		});
+
+		return {
+			pending,
+			served,
+		};
+	}
+
 	async getAllBookingService(
 		query: PaginateParams,
 	): Promise<PaginateData<BookingServiceDTO>> {
