@@ -49,6 +49,12 @@ export class BookingController {
 	@ApiOperation({ summary: 'Get all bookings' })
 	@ApiPaginationQuery()
 	@ApiQuery({
+		name: 'filter',
+		required: false,
+		enum: ['pending', 'checked in', 'checked out'],
+		description: 'Filter for bookings (pending, checked in, checked out)',
+	})
+	@ApiQuery({
 		name: 'sortBy',
 		required: false,
 		enum: ['createdAt', 'checkinDate', 'checkoutDate', 'totalAmount', 'status'],
@@ -62,8 +68,33 @@ export class BookingController {
 	})
 	async getBookings(
 		@Query() query: PaginateParams,
+		@Query('filter')
+		filter?: 'pending' | 'checked in' | 'checked out',
 	): Promise<PaginateData<Booking>> {
-		return this.bookingService.getBookings(query);
+		return this.bookingService.getBookings(query, filter);
+	}
+
+	@Get('status-count')
+	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@ApiOperation({ summary: 'Get count of bookings by status' })
+	@ApiResponse({
+		status: 200,
+		description: 'Count of bookings by status',
+		schema: {
+			type: 'object',
+			properties: {
+				pending: { type: 'number' },
+				checkedIn: { type: 'number' },
+				checkedOut: { type: 'number' },
+			},
+		},
+	})
+	async getBookingCountByStatus(): Promise<{
+		pending: number;
+		checkedIn: number;
+		checkedOut: number;
+	}> {
+		return this.bookingService.getBookingCountByStatus();
 	}
 
 	@Get(':id')
@@ -117,5 +148,35 @@ export class BookingController {
 		}
 
 		return this.bookingService.addServiceToBooking(bookingId, serviceId);
+	}
+
+	@Get('user/:userId')
+	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
+	@ApiOperation({ summary: 'Get bookings by user ID with optional filters' })
+	@ApiPaginationQuery()
+	@ApiQuery({
+		name: 'filter',
+		required: false,
+		enum: ['upcoming', 'staying', 'past'],
+		description: 'Filter for bookings (upcoming, staying, past)',
+	})
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: ['createdAt', 'checkinDate', 'checkoutDate', 'totalAmount', 'status'],
+		description: 'Field to sort by',
+	})
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: SortOrder,
+		description: 'Sort order (asc/desc)',
+	})
+	async getBookingsByUserId(
+		@Param('userId') userId: string,
+		@Query() query: PaginateParams,
+		@Query('filter') filter?: 'upcoming' | 'staying' | 'past',
+	): Promise<PaginateData<Booking>> {
+		return this.bookingService.getBookingsByUserId(userId, query, filter);
 	}
 }
