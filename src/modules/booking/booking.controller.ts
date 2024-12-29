@@ -185,7 +185,8 @@ export class BookingController {
 	@ApiPaginationQuery()
 	@Roles(UserRole.Admin, UserRole.Service_Staff)
 	@ApiOperation({
-		summary: 'Get all booking services with pagination and sorting',
+		summary:
+			'Get all booking services with pagination, sorting, and status filter',
 	})
 	@ApiQuery({
 		name: 'sortBy',
@@ -199,10 +200,25 @@ export class BookingController {
 		enum: SortOrder,
 		description: 'Sort order (asc/desc)',
 	})
+	@ApiQuery({
+		name: 'status',
+		required: false,
+		enum: ['Served', 'Pending'],
+		description: 'Filter services by status (must be "Served" or "Pending")',
+	})
 	async getAllBookingServices(
-		@Query() query: PaginateParams,
+		@Req() req: RequestWithUser,
+		@Query() query: PaginateParams & { status?: string },
 	): Promise<PaginateData<BookingServiceDTO>> {
-		return this.bookingService.getAllBookingService(query);
+		const { status } = query;
+		if (status && !['Served', 'Pending'].includes(status)) {
+			throw new BadRequestException(
+				'Invalid status value. Must be "Served" or "Pending".',
+			);
+		}
+
+		const { user } = req;
+		return this.bookingService.getAllBookingService(query, user);
 	}
 
 	@Patch('services/:bookingServiceId')

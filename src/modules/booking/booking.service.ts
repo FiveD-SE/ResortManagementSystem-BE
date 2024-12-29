@@ -25,6 +25,7 @@ import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { BookingServiceDTO } from './dto/bookingService.dto';
+import { User, UserRole } from '../user/entities/user.entity';
 
 @Injectable()
 export class BookingService {
@@ -444,19 +445,20 @@ export class BookingService {
 	}
 
 	async getAllBookingService(
-		query: PaginateParams,
+		query: PaginateParams & { status?: string },
+		user: User,
 	): Promise<PaginateData<BookingServiceDTO>> {
 		const {
 			page = 1,
 			limit = 10,
 			sortBy = 'checkinDate',
 			sortOrder = SortOrder.DESC,
+			status,
 		} = query;
 
 		const skip = (page - 1) * limit;
 
 		const bookings = await this.bookingModel.find().exec();
-
 		const allDocs: BookingServiceDTO[] = [];
 
 		for (const booking of bookings) {
@@ -467,6 +469,23 @@ export class BookingService {
 			const room = await this.roomService.findOne(booking.roomId.toString());
 
 			for (const service of booking.services as any[]) {
+				if (user.role === UserRole.Service_Staff && user.serviceTypeId) {
+					const fullService = await this.serviceService.findOne(
+						service.serviceId,
+					);
+					if (
+						!fullService ||
+						fullService.serviceTypeId !== user.serviceTypeId.toString()
+					) {
+						continue;
+					}
+				}
+
+				// Nếu có filter status, kiểm tra điều kiện
+				if (status && service.status !== status) {
+					continue;
+				}
+
 				allDocs.push({
 					id: service.id,
 					serviceName: service.name,
@@ -480,6 +499,7 @@ export class BookingService {
 			}
 		}
 
+		// Sắp xếp dữ liệu
 		const sortedDocs = allDocs.sort((a, b) => {
 			if (sortOrder === SortOrder.ASC) {
 				if (a[sortBy] > b[sortBy]) return 1;
@@ -492,22 +512,19 @@ export class BookingService {
 			}
 		});
 
+		// Phân trang
 		const totalDocs = sortedDocs.length;
 		const totalPages = Math.ceil(totalDocs / limit);
 
 		const docs = sortedDocs.slice(skip, skip + limit);
-
-		const actualDocs = docs.slice(0, limit);
-
 		const hasNextPage = page < totalPages;
 		const hasPrevPage = page > 1;
 		const nextPage = hasNextPage ? page + 1 : null;
 		const prevPage = hasPrevPage ? page - 1 : null;
-
 		const pagingCounter = skip + 1;
 
 		return {
-			docs: actualDocs,
+			docs,
 			totalDocs,
 			page,
 			limit,
