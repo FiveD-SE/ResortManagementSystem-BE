@@ -4,7 +4,7 @@ import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
 import metadata from '../metadata';
 
 export async function configSwagger(app: INestApplication) {
-	if (process.env.NODE_ENV === 'production') {
+	if (process.env.SWAGGER_ENABLED !== 'true') {
 		return;
 	}
 
