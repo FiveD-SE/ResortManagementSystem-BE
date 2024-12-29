@@ -1,3 +1,4 @@
+# Development stage
 FROM node:lts-alpine as development
 
 WORKDIR /usr/src/app
@@ -7,7 +8,7 @@ ENV NODE_ENV=${NODE_ENV}
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
@@ -15,6 +16,7 @@ RUN npm run build
 
 CMD [ "npm", "run", "start:dev" ]
 
+# Production stage
 FROM node:20-alpine as production
 
 ARG NODE_ENV=production
@@ -24,8 +26,8 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm install --only=production
+RUN npm ci --only=production --legacy-peer-deps
 
-COPY --from=development /usr/src/app/dist ./dist 
+COPY --from=development /usr/src/app/dist ./dist
 
 CMD [ "node", "dist/main.js" ]
