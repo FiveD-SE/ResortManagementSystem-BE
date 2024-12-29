@@ -428,13 +428,14 @@ export class BookingService {
 		pending: number;
 		served: number;
 	}> {
-		const pending = await this.bookingModel.countDocuments({
-			'services.status': 'Pending',
-		});
-
-		const served = await this.bookingModel.countDocuments({
-			'services.status': 'Served',
-		});
+		const [pending, served] = await Promise.all([
+			this.bookingModel.countDocuments({
+				'services.status': ServiceStatus.Pending,
+			}),
+			this.bookingModel.countDocuments({
+				'services.status': ServiceStatus.Served,
+			}),
+		]);
 
 		return {
 			pending,
