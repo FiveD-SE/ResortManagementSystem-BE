@@ -71,10 +71,16 @@ export class AuthController {
 					password: 'Example@123',
 				} as LoginRequestDTO,
 			},
-			service_staff: {
+			service_staff_SkincareService: {
 				value: {
 					email: 'service@example.com',
 					password: 'Example@123',
+				} as LoginRequestDTO,
+			},
+			service_staff_BasicService: {
+				value: {
+					email: 'user999@example.com',
+					password: 'string',
 				} as LoginRequestDTO,
 			},
 		},
