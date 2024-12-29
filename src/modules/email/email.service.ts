@@ -71,4 +71,41 @@ export class EmailService {
 			}),
 		});
 	}
+
+	async sendInvoiceEmail(
+		email: string,
+		name: string,
+		items: { name: string; amount: number }[],
+		paymentUrl: string,
+	): Promise<void> {
+		const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+		const itemsHtml = items
+			.map(
+				(item) => `
+                <tr>
+                    <td style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 80%; padding-top: 10px; padding-bottom: 10px; font-size: 16px;">
+                        ${item.name}
+                    </td>
+                    <td align="right" style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 20%; text-align: right; font-size: 16px;">
+                        $${item.amount.toFixed(2)}
+                    </td>
+                </tr>
+            `,
+			)
+			.join('');
+
+		const html = this.convertToHTML('mail-invoice', {
+			name,
+			items: itemsHtml,
+			totalAmount: `$${totalAmount.toFixed(2)}`,
+			paymentUrl,
+			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toDateString(),
+		});
+
+		await this.sendEmail({
+			to: email,
+			subject: 'Your Invoice',
+			html,
+		});
+	}
 }

@@ -23,8 +23,9 @@ import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { CreateInvoiceDto } from '../invoice/dto/createInvoice.dto';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { InvoiceService } from '../invoice/invoice.service';
-import { config } from 'process';
 import { ConfigService } from '@nestjs/config';
+import { EmailService } from '../email/email.service';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class BookingService {
@@ -36,6 +37,8 @@ export class BookingService {
 		private readonly userPromotionService: UserPromotionService,
 		private readonly invoiceService: InvoiceService,
 		private readonly configService: ConfigService,
+		private readonly emailService: EmailService,
+		private readonly userService: UserService,
 	) {}
 
 	async createBooking(
@@ -276,10 +279,28 @@ export class BookingService {
 			bookingId: bookingId,
 		};
 
+		const customer = await this.userService.getUser(
+			booking.customerId.toString(),
+		);
+
+		console.log('customer', customer);
+
+		const invoice = await this.invoiceService.createInvoice(createInvoiceDto);
+
+		await this.emailService.sendInvoiceEmail(
+			customer.email,
+			customer.firstName,
+			items.map((item) => ({
+				name: item.name,
+				amount: item.price * item.quantity,
+			})),
+			invoice.checkoutUrl,
+		);
+
 		booking.status = BookingStatus.CheckedOut;
 		await booking.save();
 
-		return this.invoiceService.createInvoice(createInvoiceDto);
+		return invoice;
 	}
 
 	async addServiceToBooking(
