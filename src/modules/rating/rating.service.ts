@@ -29,9 +29,16 @@ export class RatingService {
 		});
 
 		const savedRating = await rating.save();
+		console.log('room', room);
+		const ratings = await this.ratingModel
+			.find({ roomId: room._id })
+			.select('id');
 
-		room.ratings.push(savedRating._id as Types.ObjectId);
-		room.averageRating = await this.calculateAverageRating(room.ratings);
+		console.log('ratings', ratings);
+		const averageRating = await this.calculateAverageRating(
+			ratings.map((r) => r.id),
+		);
+		room.averageRating = averageRating;
 		await room.save();
 
 		return savedRating;
