@@ -23,6 +23,8 @@ import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { CreateInvoiceDto } from '../invoice/dto/createInvoice.dto';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { InvoiceService } from '../invoice/invoice.service';
+import { config } from 'process';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class BookingService {
@@ -33,6 +35,7 @@ export class BookingService {
 		private readonly promotionService: PromotionService,
 		private readonly userPromotionService: UserPromotionService,
 		private readonly invoiceService: InvoiceService,
+		private readonly configService: ConfigService,
 	) {}
 
 	async createBooking(
@@ -261,8 +264,12 @@ export class BookingService {
 			userId: booking.customerId.toString(),
 			amount: booking.totalAmount,
 			description: 'Thanh toan don hang',
-			returnUrl: `${process.env.BACKEND_URL}/invoices/update-invoice-status`,
-			cancelUrl: `${process.env.BACKEND_URL}/invoices/update-invoice-status`,
+			returnUrl:
+				this.configService.get('BACKEND_URL') +
+				'/invoices/update-invoice-status',
+			cancelUrl:
+				this.configService.get('BACKEND_URL') +
+				'/invoices/update-invoice-status',
 			issueDate: new Date(),
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 			items,
