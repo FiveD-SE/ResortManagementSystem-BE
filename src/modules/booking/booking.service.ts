@@ -110,8 +110,10 @@ export class BookingService {
 		return booking;
 	}
 
-	@Roles(UserRole.Admin, UserRole.Receptionist)
-	async getBookings(query: PaginateParams): Promise<PaginateData<Booking>> {
+	async getBookings(
+		query: PaginateParams,
+		filter?: 'pending' | 'checked in' | 'checked out',
+	): Promise<PaginateData<Booking>> {
 		const {
 			page = 1,
 			limit = 10,
@@ -119,32 +121,26 @@ export class BookingService {
 			sortOrder = SortOrder.DESC,
 		} = query;
 
-		const validSortFields = [
-			'createdAt',
-			'checkinDate',
-			'checkoutDate',
-			'totalAmount',
-			'status',
-		];
-
-		if (sortBy && !validSortFields.includes(sortBy)) {
-			throw new BadRequestException(
-				`Sort field must be one of: ${validSortFields.join(', ')}`,
-			);
-		}
-
-		const filter = {};
 		const skip = (page - 1) * limit;
-
-		// Fix: Use correct sort type for mongoose
-		const sortOptions: { [key: string]: SortOrder } = {
-			[sortBy]: sortOrder,
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
 		};
 
-		const [bookings, total] = await Promise.all([
+		const filterConditions: any = {};
+
+		if (filter === 'pending') {
+			filterConditions.status = BookingStatus.Pending;
+		} else if (filter === 'checked in') {
+			filterConditions.status = BookingStatus.CheckedIn;
+		} else if (filter === 'checked out') {
+			filterConditions.status = BookingStatus.CheckedOut;
+		}
+
+		const [count, bookings] = await Promise.all([
+			this.bookingModel.countDocuments(filterConditions).exec(),
 			this.bookingModel
-				.find(filter)
-				.sort(sortOptions as any) // Type assertion for mongoose compatibility
+				.find(filterConditions)
+				.sort(sortOptions)
 				.skip(skip)
 				.limit(limit)
 				.populate({
@@ -159,22 +155,21 @@ export class BookingService {
 				.populate('promotionId')
 				.populate('roomId.roomTypeId')
 				.exec(),
-			this.bookingModel.countDocuments(filter),
 		]);
 
-		const totalPages = Math.ceil(total / limit);
+		const totalPages = Math.ceil(count / limit);
 
 		return {
+			docs: bookings,
+			totalDocs: count,
 			page,
 			limit,
-			totalDocs: total,
+			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
 			nextPage: page < totalPages ? page + 1 : null,
 			prevPage: page > 1 ? page - 1 : null,
-			totalPages,
 			pagingCounter: skip + 1,
-			docs: bookings,
 		};
 	}
 
@@ -338,5 +333,88 @@ export class BookingService {
 		await booking.save();
 
 		return booking;
+	}
+
+	async getBookingsByUserId(
+		userId: string,
+		query: PaginateParams,
+		filter?: 'upcoming' | 'staying' | 'past',
+	): Promise<PaginateData<Booking>> {
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = query;
+
+		const skip = (page - 1) * limit;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
+
+		const filterConditions: any = { customerId: userId };
+
+		const currentDate = new Date();
+
+		if (filter === 'upcoming') {
+			filterConditions.checkinDate = { $gte: currentDate };
+		} else if (filter === 'staying') {
+			filterConditions.checkinDate = { $lte: currentDate };
+			filterConditions.checkoutDate = { $gte: currentDate };
+		} else if (filter === 'past') {
+			filterConditions.checkoutDate = { $lt: currentDate };
+		}
+
+		const [count, bookings] = await Promise.all([
+			this.bookingModel.countDocuments(filterConditions).exec(),
+			this.bookingModel
+				.find(filterConditions)
+				.sort(sortOptions)
+				.skip(skip)
+				.limit(limit)
+				.populate('roomId')
+				.populate('services.serviceId')
+				.populate('promotionId')
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			docs: bookings,
+			totalDocs: count,
+			page,
+			limit,
+			totalPages,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			pagingCounter: skip + 1,
+		};
+	}
+
+	async getBookingCountByStatus(): Promise<{
+		pending: number;
+		checkedIn: number;
+		checkedOut: number;
+	}> {
+		const [pending, checkedIn, checkedOut] = await Promise.all([
+			this.bookingModel
+				.countDocuments({ status: BookingStatus.Pending })
+				.exec(),
+			this.bookingModel
+				.countDocuments({ status: BookingStatus.CheckedIn })
+				.exec(),
+			this.bookingModel
+				.countDocuments({ status: BookingStatus.CheckedOut })
+				.exec(),
+		]);
+
+		return {
+			pending,
+			checkedIn,
+			checkedOut,
+		};
 	}
 }
