@@ -53,8 +53,10 @@ export class BookingService {
 				'Check-in date must be before check-out date',
 			);
 		}
-
-		let totalAmount = room.pricePerNight;
+		const totalNight =
+			(dto.checkoutDate.getTime() - dto.checkinDate.getTime()) /
+			(1000 * 60 * 60 * 24);
+		let totalAmount = room.pricePerNight * totalNight;
 
 		if (dto.promotionId) {
 			try {
@@ -245,10 +247,14 @@ export class BookingService {
 
 		const room = booking.roomId as unknown as Room;
 
+		const totalNight =
+			(booking.checkoutDate.getTime() - booking.checkinDate.getTime()) /
+			(1000 * 60 * 60 * 24);
+
 		const items = [
 			{
 				name: room.roomNumber,
-				quantity: 1,
+				quantity: totalNight,
 				price: room.pricePerNight,
 			},
 			...booking.services.map((service) => ({
