@@ -24,6 +24,7 @@ import { InvoiceService } from '../invoice/invoice.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
+import { BookingServiceDTO } from './dto/bookingService.dto';
 
 @Injectable()
 export class BookingService {
@@ -419,6 +420,45 @@ export class BookingService {
 			pending,
 			checkedIn,
 			checkedOut,
+		};
+	}
+
+	async getAllBookingService(): Promise<{
+		docs: BookingServiceDTO[];
+		totalDocs: number;
+	}> {
+		const [count, bookings] = await Promise.all([
+			this.bookingModel.countDocuments().exec(),
+			this.bookingModel.find().exec(),
+		]);
+
+		console.log(bookings);
+
+		const docs: BookingServiceDTO[] = [];
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			const room = await this.roomService.findOne(booking.roomId.toString());
+
+			for (const service of booking.services as any[]) {
+				docs.push({
+					id: service.id,
+					serviceName: service.name,
+					roomNumber: room.roomNumber,
+					checkinDate: booking.checkinDate,
+					checkoutDate: booking.checkoutDate,
+					status: service.status,
+					price: service.price,
+				});
+			}
+		}
+
+		return {
+			docs,
+			totalDocs: count,
 		};
 	}
 }

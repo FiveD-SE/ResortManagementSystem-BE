@@ -179,4 +179,9 @@ export class BookingController {
 	): Promise<PaginateData<Booking>> {
 		return this.bookingService.getBookingsByUserId(userId, query, filter);
 	}
+
+	@Get('/services/room-based')
+	async getAllBookingServices() {
+		return this.bookingService.getAllBookingService();
+	}
 }
