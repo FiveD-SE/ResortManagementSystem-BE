@@ -79,8 +79,8 @@ export class AuthController {
 			},
 			service_staff_BasicService: {
 				value: {
-					email: 'user999@example.com',
-					password: 'string',
+					email: 'servicestaff@example.com',
+					password: 'Example@123',
 				} as LoginRequestDTO,
 			},
 		},
