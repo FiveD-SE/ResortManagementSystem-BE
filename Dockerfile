@@ -11,6 +11,7 @@ COPY package*.json ./
 RUN npm install -g @nestjs/cli
 
 RUN npm install --legacy-peer-deps
+RUN npm install --save-dev @types/express @types/multer
 
 COPY . .
 
