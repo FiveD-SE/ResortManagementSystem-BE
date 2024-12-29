@@ -29,7 +29,8 @@ import { BookingServiceDTO } from './dto/bookingService.dto';
 @Injectable()
 export class BookingService {
 	constructor(
-		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+		@InjectModel(Booking.name)
+		private readonly bookingModel: Model<BookingDocument>,
 		private readonly roomService: RoomService,
 		private readonly serviceService: ServiceService,
 		private readonly promotionService: PromotionService,
@@ -423,18 +424,21 @@ export class BookingService {
 		};
 	}
 
-	async getAllBookingService(): Promise<{
-		docs: BookingServiceDTO[];
-		totalDocs: number;
-	}> {
-		const [count, bookings] = await Promise.all([
-			this.bookingModel.countDocuments().exec(),
-			this.bookingModel.find().exec(),
-		]);
+	async getAllBookingService(
+		query: PaginateParams,
+	): Promise<PaginateData<BookingServiceDTO>> {
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'checkinDate',
+			sortOrder = SortOrder.DESC,
+		} = query;
 
-		console.log(bookings);
+		const skip = (page - 1) * limit;
 
-		const docs: BookingServiceDTO[] = [];
+		const bookings = await this.bookingModel.find().exec();
+
+		const allDocs: BookingServiceDTO[] = [];
 
 		for (const booking of bookings) {
 			if (!booking.services || booking.services.length === 0) {
@@ -444,7 +448,7 @@ export class BookingService {
 			const room = await this.roomService.findOne(booking.roomId.toString());
 
 			for (const service of booking.services as any[]) {
-				docs.push({
+				allDocs.push({
 					id: service.id,
 					serviceName: service.name,
 					roomNumber: room.roomNumber,
@@ -456,9 +460,43 @@ export class BookingService {
 			}
 		}
 
+		const sortedDocs = allDocs.sort((a, b) => {
+			if (sortOrder === SortOrder.ASC) {
+				if (a[sortBy] > b[sortBy]) return 1;
+				if (a[sortBy] < b[sortBy]) return -1;
+				return 0;
+			} else {
+				if (a[sortBy] < b[sortBy]) return 1;
+				if (a[sortBy] > b[sortBy]) return -1;
+				return 0;
+			}
+		});
+
+		const totalDocs = sortedDocs.length;
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		const docs = sortedDocs.slice(skip, skip + limit);
+
+		const actualDocs = docs.slice(0, limit);
+
+		const hasNextPage = page < totalPages;
+		const hasPrevPage = page > 1;
+		const nextPage = hasNextPage ? page + 1 : null;
+		const prevPage = hasPrevPage ? page - 1 : null;
+
+		const pagingCounter = skip + 1;
+
 		return {
-			docs,
-			totalDocs: count,
+			docs: actualDocs,
+			totalDocs,
+			page,
+			limit,
+			totalPages,
+			hasNextPage,
+			hasPrevPage,
+			nextPage,
+			prevPage,
+			pagingCounter,
 		};
 	}
 }

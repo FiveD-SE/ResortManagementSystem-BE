@@ -22,6 +22,7 @@ import { Booking } from './entities/booking.entity';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { RequestWithUser } from '@/types/request.type';
+import { BookingServiceDTO } from './dto/bookingService.dto';
 
 @Controller('bookings')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -181,7 +182,26 @@ export class BookingController {
 	}
 
 	@Get('/services/room-based')
-	async getAllBookingServices() {
-		return this.bookingService.getAllBookingService();
+	@ApiPaginationQuery()
+	@Roles(UserRole.Admin, UserRole.Service_Staff)
+	@ApiOperation({
+		summary: 'Get all booking services with pagination and sorting',
+	})
+	@ApiQuery({
+		name: 'sortBy',
+		required: false,
+		enum: ['serviceName', 'checkinDate', 'checkoutDate', 'status', 'price'],
+		description: 'Field to sort by',
+	})
+	@ApiQuery({
+		name: 'sortOrder',
+		required: false,
+		enum: SortOrder,
+		description: 'Sort order (asc/desc)',
+	})
+	async getAllBookingServices(
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<BookingServiceDTO>> {
+		return this.bookingService.getAllBookingService(query);
 	}
 }
