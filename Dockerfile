@@ -13,7 +13,9 @@ RUN npm install --only=development
 
 COPY . .
 
-RUN npm run build 
+RUN npm run build
+
+CMD [ "npm", "run", "start:dev" ]
 
 FROM node:20-alpine as production
 
