@@ -16,6 +16,9 @@ export class BookingServiceDTO {
 	@IsDate()
 	checkoutDate: Date;
 
+	@IsNumber()
+	quantity: number;
+
 	@IsString()
 	status: string;
 

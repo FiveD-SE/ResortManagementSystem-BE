@@ -454,6 +454,7 @@ export class BookingService {
 					roomNumber: room.roomNumber,
 					checkinDate: booking.checkinDate,
 					checkoutDate: booking.checkoutDate,
+					quantity: service.quantity,
 					status: service.status,
 					price: service.price,
 				});
@@ -498,5 +499,41 @@ export class BookingService {
 			prevPage,
 			pagingCounter,
 		};
+	}
+
+	async updateBookingServiceStatus(bookingServiceId: string): Promise<Booking> {
+		if (!Types.ObjectId.isValid(bookingServiceId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+		const booking = await this.bookingModel
+			.findOne({
+				'services._id': bookingServiceId,
+			})
+			.exec();
+
+		if (!booking) {
+			throw new NotFoundException(
+				`Service with ID ${bookingServiceId} not found in any booking`,
+			);
+		}
+
+		const service = booking.services.find(
+			(service: any) => service._id.toString() === bookingServiceId,
+		);
+
+		if (!service) {
+			throw new NotFoundException(
+				`Service with ID ${bookingServiceId} not found in booking`,
+			);
+		}
+
+		if (service.status !== ServiceStatus.Pending) {
+			throw new BadRequestException('Service is already served or not pending');
+		}
+
+		service.status = ServiceStatus.Served;
+
+		await booking.save();
+		return booking;
 	}
 }

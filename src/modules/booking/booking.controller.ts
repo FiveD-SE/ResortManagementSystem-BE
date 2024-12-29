@@ -204,4 +204,13 @@ export class BookingController {
 	): Promise<PaginateData<BookingServiceDTO>> {
 		return this.bookingService.getAllBookingService(query);
 	}
+
+	@Patch('services/:bookingServiceId')
+	@Roles(UserRole.Admin, UserRole.Service_Staff)
+	@ApiOperation({ summary: 'Update booking service status' })
+	async updateBookingServiceStatus(
+		@Param('bookingServiceId') bookingServiceId: string,
+	): Promise<Booking> {
+		return this.bookingService.updateBookingServiceStatus(bookingServiceId);
+	}
 }
