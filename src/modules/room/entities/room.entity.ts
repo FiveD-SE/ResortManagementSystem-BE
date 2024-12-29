@@ -33,8 +33,8 @@ export class Room extends BaseEntity {
 	@Prop({ type: [String], default: [] })
 	images: string[];
 
-	@Prop({ type: [{ type: Types.ObjectId, ref: 'Rating' }], default: [] })
-	ratings: Types.ObjectId[];
+	// @Prop({ type: [{ type: Types.ObjectId, ref: 'Rating' }], default: [] })
+	// ratings: Types.ObjectId[];
 
 	@Prop({ type: Number, default: 0 })
 	averageRating: number;
