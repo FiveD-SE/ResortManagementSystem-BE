@@ -7,7 +7,7 @@ ENV NODE_ENV=${NODE_ENV}
 
 COPY package*.json ./
 
-RUN npm install -g @nestjs/cli && npm install glob rimraf && npm install
+RUN npm install
 
 COPY . .
 
