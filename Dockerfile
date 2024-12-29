@@ -8,6 +8,8 @@ ENV NODE_ENV=${NODE_ENV}
 
 COPY package*.json ./
 
+RUN npm install -g @nestjs/cli
+
 RUN npm install --legacy-peer-deps
 
 COPY . .
