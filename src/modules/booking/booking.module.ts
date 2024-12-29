@@ -9,6 +9,7 @@ import { PromotionModule } from '../promotion/promotion.module';
 import { InvoiceModule } from '../invoice/invoice.module';
 import { EmailModule } from '../email/email.module';
 import { UserModule } from '../user/user.module';
+import { ServiceTypeModule } from '../serviceType/serviceType.module';
 
 @Module({
 	imports: [
@@ -19,6 +20,7 @@ import { UserModule } from '../user/user.module';
 		InvoiceModule,
 		EmailModule,
 		UserModule,
+		ServiceTypeModule,
 	],
 	controllers: [BookingController],
 	providers: [BookingService],

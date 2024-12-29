@@ -7,6 +7,9 @@ export class BookingServiceDTO {
 	@IsString()
 	serviceName: string;
 
+	@IsString()
+	serviceTypeName: string;
+
 	@IsNumber()
 	roomNumber: string;
 

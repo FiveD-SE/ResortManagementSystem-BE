@@ -1,3 +1,4 @@
+import { ServiceTypeService } from './../serviceType/serviceType.service';
 import {
 	Injectable,
 	BadRequestException,
@@ -40,6 +41,7 @@ export class BookingService {
 		private readonly configService: ConfigService,
 		private readonly emailService: EmailService,
 		private readonly userService: UserService,
+		private readonly serviceTypeService: ServiceTypeService,
 	) {}
 
 	async createBooking(
@@ -469,10 +471,14 @@ export class BookingService {
 			const room = await this.roomService.findOne(booking.roomId.toString());
 
 			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
 				if (user.role === UserRole.Service_Staff && user.serviceTypeId) {
-					const fullService = await this.serviceService.findOne(
-						service.serviceId,
-					);
 					if (
 						!fullService ||
 						fullService.serviceTypeId !== user.serviceTypeId.toString()
@@ -481,7 +487,6 @@ export class BookingService {
 					}
 				}
 
-				// Nếu có filter status, kiểm tra điều kiện
 				if (status && service.status !== status) {
 					continue;
 				}
@@ -489,6 +494,7 @@ export class BookingService {
 				allDocs.push({
 					id: service.id,
 					serviceName: service.name,
+					serviceTypeName: fullServiceType.typeName,
 					roomNumber: room.roomNumber,
 					checkinDate: booking.checkinDate,
 					checkoutDate: booking.checkoutDate,
@@ -513,6 +519,99 @@ export class BookingService {
 		});
 
 		// Phân trang
+		const totalDocs = sortedDocs.length;
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		const docs = sortedDocs.slice(skip, skip + limit);
+		const hasNextPage = page < totalPages;
+		const hasPrevPage = page > 1;
+		const nextPage = hasNextPage ? page + 1 : null;
+		const prevPage = hasPrevPage ? page - 1 : null;
+		const pagingCounter = skip + 1;
+
+		return {
+			docs,
+			totalDocs,
+			page,
+			limit,
+			totalPages,
+			hasNextPage,
+			hasPrevPage,
+			nextPage,
+			prevPage,
+			pagingCounter,
+		};
+	}
+
+	async getBookingServicesByServiceType(
+		query: PaginateParams & { status?: string },
+		serviceTypeId: string,
+	): Promise<PaginateData<BookingServiceDTO>> {
+		if (!Types.ObjectId.isValid(serviceTypeId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'checkinDate',
+			sortOrder = SortOrder.DESC,
+			status,
+		} = query;
+
+		const skip = (page - 1) * limit;
+
+		const bookings = await this.bookingModel.find().exec();
+		const allDocs: BookingServiceDTO[] = [];
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			const room = await this.roomService.findOne(booking.roomId.toString());
+
+			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+				if (fullService.serviceTypeId !== serviceTypeId) {
+					continue;
+				}
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
+
+				if (status && service.status !== status) {
+					continue;
+				}
+
+				allDocs.push({
+					id: service.id,
+					serviceName: service.name,
+					serviceTypeName: fullServiceType.typeName,
+					roomNumber: room.roomNumber,
+					checkinDate: booking.checkinDate,
+					checkoutDate: booking.checkoutDate,
+					quantity: service.quantity,
+					status: service.status,
+					price: service.price,
+				});
+			}
+		}
+
+		const sortedDocs = allDocs.sort((a, b) => {
+			if (sortOrder === SortOrder.ASC) {
+				if (a[sortBy] > b[sortBy]) return 1;
+				if (a[sortBy] < b[sortBy]) return -1;
+				return 0;
+			} else {
+				if (a[sortBy] < b[sortBy]) return 1;
+				if (a[sortBy] > b[sortBy]) return -1;
+				return 0;
+			}
+		});
+
 		const totalDocs = sortedDocs.length;
 		const totalPages = Math.ceil(totalDocs / limit);
 
