@@ -19,6 +19,7 @@ import {
 	ApiOperation,
 	ApiParam,
 	ApiQuery,
+	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
@@ -30,6 +31,30 @@ import { Roles } from '@/decorators/roles.decorator';
 @OnlyAdmin()
 export class UserManagerController {
 	constructor(private readonly userManagerService: UserManagerService) {}
+	@Get('staff-count')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Get count of staff',
+	})
+	@ApiResponse({
+		status: 200,
+		description: 'Count of staff',
+		schema: {
+			type: 'object',
+			properties: {
+				total: { type: 'number' },
+				receptionist: { type: 'number' },
+				service_staff: { type: 'number' },
+			},
+		},
+	})
+	async getStaffCount(): Promise<{
+		total: number;
+		receptionist: number;
+		service_staff: number;
+	}> {
+		return this.userManagerService.getStaffCount();
+	}
 
 	@Get(':role')
 	@ApiPaginationQuery()

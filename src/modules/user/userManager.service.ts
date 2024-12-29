@@ -127,4 +127,24 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 		}
 		await this.userModel.deleteOne({ _id: id }).exec();
 	}
+
+	async getStaffCount(): Promise<{
+		total: number;
+		receptionist: number;
+		service_staff: number;
+	}> {
+		const [total, receptionist, serviceStaff] = await Promise.all([
+			this.userModel
+				.countDocuments({ role: { $in: ['receptionist', 'service_staff'] } })
+				.exec(),
+			this.userModel.countDocuments({ role: 'receptionist' }).exec(),
+			this.userModel.countDocuments({ role: 'service_staff' }).exec(),
+		]);
+
+		return {
+			total,
+			receptionist,
+			service_staff: serviceStaff,
+		};
+	}
 }

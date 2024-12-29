@@ -62,6 +62,10 @@ export class UserService extends BaseServiceAbstract<User> {
 
 		if (!u) throw new BadRequestException('User not found');
 
+		if (u.serviceTypeId) {
+			(u as any).serviceTypeId = u.serviceTypeId.toString();
+		}
+
 		return u;
 	}
 
