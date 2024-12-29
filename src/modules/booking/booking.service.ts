@@ -16,8 +16,6 @@ import { ServiceService } from '../service/service.service';
 import { PromotionService } from '../promotion/promotion.service';
 import { ServiceStatus } from '../service/enums/service-status.enum';
 import { UserPromotionService } from '../promotion/userPromotion.service';
-import { Roles } from '@/decorators/roles.decorator';
-import { UserRole } from '../user/entities/user.entity';
 import { Room } from '../room/entities/room.entity';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { CreateInvoiceDto } from '../invoice/dto/createInvoice.dto';
@@ -149,7 +147,7 @@ export class BookingService {
 					path: 'roomId',
 					populate: {
 						path: 'roomTypeId',
-						select: 'typeName', // Select only the typeName field
+						select: 'typeName',
 					},
 				})
 				.populate('customerId', '-password')
@@ -182,7 +180,7 @@ export class BookingService {
 				path: 'roomId',
 				populate: {
 					path: 'roomTypeId',
-					select: 'typeName', // Select only the typeName field
+					select: 'typeName',
 				},
 			})
 			.populate({ path: 'customerId', select: '-password' })

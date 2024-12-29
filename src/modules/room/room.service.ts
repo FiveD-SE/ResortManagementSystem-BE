@@ -124,7 +124,7 @@ export class RoomService {
 					},
 					{ $sort: sortOptions },
 					{ $skip: skip },
-					{ $limit: limit },
+					{ $limit: Number(limit) },
 				])
 				.exec(),
 		]);
@@ -138,7 +138,7 @@ export class RoomService {
 			docs: roomDTOs,
 			totalDocs: count,
 			page,
-			limit,
+			limit: Number(limit),
 			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
@@ -191,7 +191,7 @@ export class RoomService {
 					},
 					{ $sort: sortOptions },
 					{ $skip: skip },
-					{ $limit: limit },
+					{ $limit: Number(limit) },
 				])
 				.exec(),
 		]);
@@ -204,7 +204,7 @@ export class RoomService {
 			docs: roomDTOs,
 			totalDocs: count,
 			page,
-			limit,
+			limit: Number(limit),
 			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
