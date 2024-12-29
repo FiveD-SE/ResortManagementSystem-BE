@@ -1,19 +1,14 @@
-version: '3.8'
-
+version: '3.9'
 services:
-  nestjsbase:
-    container_name: nestjsbase
-    image: nestjsbase:latest
+  app:
     build:
       context: .
       target: development
+    environment:
+      - NODE_ENV=development
+      - SWAGGER_ENABLED=true
     ports:
-      - ${PORT}:${PORT}
+      - "3000:3000"
     volumes:
-      - ./:/usr/src/app
-    command: npm run start:dev
-    restart: unless-stopped
-
-networks:
-  default:
-    driver: bridge
+      - .:/usr/src/app
+      - /usr/src/app/node_modules
