@@ -8,10 +8,7 @@ ENV NODE_ENV=${NODE_ENV}
 
 COPY package*.json ./
 
-RUN npm install -g @nestjs/cli
-
-RUN npm install --legacy-peer-deps
-RUN npm install --save-dev @types/express @types/multer
+RUN npm install
 
 COPY . .
 
@@ -29,7 +26,7 @@ WORKDIR /usr/src/app
 
 COPY package*.json ./
 
-RUN npm ci --only=production --legacy-peer-deps
+RUN npm install
 
 COPY --from=development /usr/src/app/dist ./dist
 
