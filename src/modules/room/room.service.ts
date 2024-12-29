@@ -46,7 +46,7 @@ export class RoomService {
 		}
 
 		return {
-			id: room.id,
+			id: room._id.toString(),
 			roomNumber: room.roomNumber,
 			roomTypeId: room.roomTypeId.toString(),
 			status: room.status,
