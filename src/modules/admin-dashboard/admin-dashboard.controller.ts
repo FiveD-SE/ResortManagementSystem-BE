@@ -35,6 +35,33 @@ export class AdminDashboardController {
 		return this.adminDashboardService.getDailyRevenue();
 	}
 
+	@Get('yearly-revenue')
+	@Roles(UserRole.Admin)
+	@ApiOperation({ summary: 'Get yearly revenue' })
+	@ApiResponse({
+		status: 200,
+		description: 'Yearly revenue',
+		schema: {
+			type: 'object',
+			properties: {
+				currentYearRevenue: { type: 'number' },
+				lastYearRevenue: { type: 'number' },
+				currentYearMonthlyRevenue: {
+					type: 'array',
+					items: { type: 'number' },
+				},
+				lastYearMonthlyRevenue: {
+					type: 'array',
+					items: { type: 'number' },
+				},
+				growth: { type: 'number' },
+			},
+		},
+	})
+	async getYearlyRevenue() {
+		return this.adminDashboardService.getYearlyRevenue();
+	}
+
 	@Get('daily-customer-growth')
 	@Roles(UserRole.Admin)
 	@ApiOperation({ summary: 'Get daily customer growth percentage' })
