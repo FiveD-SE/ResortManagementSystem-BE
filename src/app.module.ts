@@ -22,6 +22,7 @@ import { ReportModule } from './modules/report/report.module';
 import { RatingModule } from './modules/rating/rating.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
+import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -75,6 +76,7 @@ import { InvoiceModule } from './modules/invoice/invoice.module';
 		RatingModule,
 		BookingModule,
 		InvoiceModule,
+		AdminDashboardModule,
 	],
 	controllers: [AppController],
 	providers: [

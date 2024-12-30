@@ -38,6 +38,7 @@
 		"class-transformer": "^0.5.1",
 		"class-validator": "^0.14.1",
 		"cross-env": "^7.0.3",
+		"exceljs": "^4.4.0",
 		"imgur": "^2.4.2",
 		"joi": "^17.13.3",
 		"madge": "^8.0.0",

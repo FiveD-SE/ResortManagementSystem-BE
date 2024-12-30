@@ -377,4 +377,32 @@ export class RoomService {
 			occupiedDates,
 		};
 	}
+
+	async getRoomAvailabilityToday(): Promise<{
+		availableRooms: number;
+		bookedRooms: number;
+		totalRooms: number;
+	}> {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const tomorrow = new Date(today);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+
+		const totalRooms = await this.roomModel.countDocuments().exec();
+
+		const bookedRooms = await this.bookingModel
+			.countDocuments({
+				checkinDate: { $lte: tomorrow },
+				checkoutDate: { $gte: today },
+			})
+			.exec();
+
+		const availableRooms = totalRooms - bookedRooms;
+
+		return {
+			availableRooms,
+			bookedRooms,
+			totalRooms,
+		};
+	}
 }
