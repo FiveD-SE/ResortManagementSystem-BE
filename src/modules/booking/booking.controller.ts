@@ -286,10 +286,11 @@ export class BookingController {
 			},
 		},
 	})
-	async getBookingServiceCountByStatus(): Promise<{
+	async getBookingServiceCountByStatus(@Req() req: RequestWithUser): Promise<{
 		pending: number;
 		served: number;
 	}> {
-		return this.bookingService.getServiceStatusCount();
+		const { user } = req;
+		return this.bookingService.getServiceStatusCount(user);
 	}
 }
