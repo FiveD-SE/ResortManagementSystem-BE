@@ -4,7 +4,7 @@ import {
 	BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
 import { Room, RoomDocument } from './entities/room.entity';
@@ -164,10 +164,15 @@ export class RoomService {
 			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
 		};
 
+		console.log(roomTypeId);
+
 		const [count, rooms] = await Promise.all([
-			this.roomModel.countDocuments().exec(),
+			this.roomModel.countDocuments({ roomTypeId }).exec(),
 			this.roomModel
 				.aggregate([
+					{
+						$match: { roomTypeId: roomTypeId },
+					},
 					{
 						$lookup: {
 							from: 'bookings',
@@ -195,6 +200,7 @@ export class RoomService {
 				])
 				.exec(),
 		]);
+
 		const totalPages = Math.ceil(count / limit);
 		const roomDTOs = await Promise.all(
 			rooms.map((room) => this.mapToRoomDTO(room, room.bookingCount)),
