@@ -427,18 +427,44 @@ export class BookingService {
 		};
 	}
 
-	async getServiceStatusCount(): Promise<{
+	async getServiceStatusCount(user: User): Promise<{
 		pending: number;
 		served: number;
 	}> {
-		const [pending, served] = await Promise.all([
-			this.bookingModel.countDocuments({
-				'services.status': ServiceStatus.Pending,
-			}),
-			this.bookingModel.countDocuments({
-				'services.status': ServiceStatus.Served,
-			}),
-		]);
+		const bookings = await this.bookingModel.find().exec();
+
+		let pending = 0;
+		let served = 0;
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+				if (!fullService) continue;
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
+				if (!fullServiceType) continue;
+
+				if (user.role === UserRole.Service_Staff && user.serviceTypeId) {
+					if (fullService.serviceTypeId !== user.serviceTypeId.toString()) {
+						continue;
+					}
+				}
+
+				if (service.status === ServiceStatus.Pending) {
+					pending += 1;
+				} else if (service.status === ServiceStatus.Served) {
+					served += 1;
+				}
+			}
+		}
 
 		return {
 			pending,
