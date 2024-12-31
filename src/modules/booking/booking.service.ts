@@ -162,7 +162,7 @@ export class BookingService {
 			checkinDate: dto.checkinDate,
 			checkoutDate: dto.checkoutDate,
 			services: bookingServices,
-			promotionId: dto.promotionId,
+			promotionId: dto.promotionId || null,
 			totalAmount,
 			status: BookingStatus.Pending,
 			guests: dto.guests,
