@@ -5,6 +5,7 @@ import { RequestWithUser } from '@/types/request.type';
 import {
 	Body,
 	Controller,
+	ForbiddenException,
 	Get,
 	Param,
 	Patch,
@@ -21,15 +22,23 @@ import { User, UserRole } from './entities/user.entity';
 import { UserService } from './user.service';
 import { CreateUserRequestDTO } from './dto/request/createUser.request.dto';
 import { Roles } from '@/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
 @Controller('users')
+@UseGuards(JwtAccessTokenGuard, RolesGuard)
 export class UserController {
 	constructor(private readonly userService: UserService) {}
 
 	@Get(':userID')
-	@Roles(UserRole.Admin)
-	findOne(@Param('userID') id: string) {
-		return this.userService.getUser(id);
+	async findOne(@Param('userID') id: string, @Req() request: RequestWithUser) {
+		if (
+			request.user.role !== UserRole.Admin &&
+			request.user._id.toString() !== id
+		) {
+			throw new ForbiddenException('You can only access your own profile');
+		}
+		return this.userService.findByID(id);
 	}
 
 	@Post()

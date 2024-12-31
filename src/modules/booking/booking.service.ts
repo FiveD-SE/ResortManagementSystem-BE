@@ -44,6 +44,63 @@ export class BookingService {
 		private readonly serviceTypeService: ServiceTypeService,
 	) {}
 
+	private async createTransferInvoice(bookingId: string) {
+		const booking = await this.getBookingById(bookingId);
+
+		console.log('booking', booking);
+
+		const room = booking.roomId as unknown as Room;
+
+		const totalNight =
+			(booking.checkoutDate.getTime() - booking.checkinDate.getTime()) /
+			(1000 * 60 * 60 * 24);
+		const items = [
+			{
+				name: room.roomNumber,
+				quantity: totalNight,
+				price: room.pricePerNight,
+			},
+			...booking.services.map((service) => ({
+				name: service.name,
+				quantity: service.quantity,
+				price: service.price,
+			})),
+		];
+
+		const createInvoiceDto: CreateInvoiceDto = {
+			userId: booking.customerId.toString(),
+			amount: booking.totalAmount,
+			description: 'Transfer booking',
+			returnUrl:
+				this.configService.get('BACKEND_URL') +
+				'/invoices/update-invoice-status',
+			cancelUrl:
+				this.configService.get('BACKEND_URL') +
+				'/invoices/update-invoice-status',
+			issueDate: new Date(),
+			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+			items,
+			bookingId: bookingId,
+			status: 'PENDING',
+		};
+
+		const customer = booking.customerId as unknown as User;
+
+		const invoice = await this.invoiceService.createInvoice(createInvoiceDto);
+
+		await this.emailService.sendInvoiceEmail(
+			customer.email,
+			customer.firstName,
+			items.map((item) => ({
+				name: item.name,
+				amount: item.price * item.quantity,
+			})),
+			invoice.checkoutUrl,
+		);
+
+		return invoice;
+	}
+
 	async createBooking(
 		roomId: string,
 		userId: string,
@@ -56,6 +113,7 @@ export class BookingService {
 				'Check-in date must be before check-out date',
 			);
 		}
+
 		const totalNight =
 			(dto.checkoutDate.getTime() - dto.checkinDate.getTime()) /
 			(1000 * 60 * 60 * 24);
@@ -64,7 +122,6 @@ export class BookingService {
 		if (dto.promotionId) {
 			try {
 				await this.userPromotionService.usePromotion(userId, dto.promotionId);
-
 				const promotion = await this.promotionService.getPromotionById(
 					dto.promotionId,
 				);
@@ -82,7 +139,6 @@ export class BookingService {
 			}
 		}
 
-		// Process services with status
 		let bookingServices = [];
 		if (dto.serviceIds?.length) {
 			const services = await this.serviceService.findByIds(dto.serviceIds);
@@ -91,7 +147,6 @@ export class BookingService {
 			}
 			totalAmount += services.reduce((sum, service) => sum + service.price, 0);
 
-			// Create booking services with Pending status
 			bookingServices = services.map((service) => ({
 				serviceId: service._id as ObjectId,
 				status: ServiceStatus.Pending,
@@ -110,7 +165,14 @@ export class BookingService {
 			promotionId: dto.promotionId,
 			totalAmount,
 			status: BookingStatus.Pending,
+			guests: dto.guests,
+			paymentMethod: dto.paymentMethod,
+			paidAmount: dto.paymentMethod === 'Transfer' ? totalAmount : 0,
 		});
+
+		if (dto.paymentMethod === 'Transfer') {
+			await this.createTransferInvoice(booking._id.toString());
+		}
 
 		return booking;
 	}
@@ -248,6 +310,8 @@ export class BookingService {
 			);
 		}
 
+		const remainingAmount = booking.totalAmount - (booking.paidAmount || 0);
+
 		const room = booking.roomId as unknown as Room;
 
 		const totalNight =
@@ -269,8 +333,11 @@ export class BookingService {
 
 		const createInvoiceDto: CreateInvoiceDto = {
 			userId: booking.customerId.toString(),
-			amount: booking.totalAmount,
-			description: 'Thanh toan don hang',
+			amount: remainingAmount,
+			description:
+				booking.paymentMethod === 'Transfer'
+					? 'Remaining payment'
+					: 'Full payment',
 			returnUrl:
 				this.configService.get('BACKEND_URL') +
 				'/invoices/update-invoice-status',
@@ -281,6 +348,7 @@ export class BookingService {
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
 			items,
 			bookingId: bookingId,
+			status: 'PENDING',
 		};
 
 		const customer = await this.userService.getUser(

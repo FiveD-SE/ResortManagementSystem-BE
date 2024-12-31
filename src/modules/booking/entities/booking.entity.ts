@@ -12,6 +12,11 @@ export enum BookingStatus {
 	Cancelled = 'Cancelled',
 }
 
+export enum PaymentMethod {
+	Transfer = 'Transfer',
+	PayOnArrival = 'Pay on arrival',
+}
+
 @Schema({
 	timestamps: true,
 	toJSON: {
@@ -41,8 +46,26 @@ export class Booking extends BaseEntity {
 	@Prop({ type: Types.ObjectId, ref: 'Promotion' })
 	promotionId: Types.ObjectId;
 
+	@Prop({
+		type: {
+			adults: { type: Number, required: true },
+			children: { type: Number, required: true },
+		},
+		required: true,
+	})
+	guests: {
+		adults: number;
+		children: number;
+	};
+
+	@Prop({ required: true, enum: PaymentMethod })
+	paymentMethod: string;
+
 	@Prop({ required: true, type: Number })
 	totalAmount: number;
+
+	@Prop({ type: Number, default: 0 })
+	paidAmount: number;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
