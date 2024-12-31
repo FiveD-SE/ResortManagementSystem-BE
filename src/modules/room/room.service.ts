@@ -303,7 +303,7 @@ export class RoomService {
 				const user = await this.userService.getUser(rating.userId.toString());
 				return {
 					...rating.toObject(),
-					username: user?.firstName + ' ' + user?.lastName || 'Ẩn danh',
+					fullName: user?.firstName + ' ' + user?.lastName || 'Ẩn danh',
 				};
 			}),
 		);
