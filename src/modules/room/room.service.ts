@@ -18,6 +18,7 @@ import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Rating } from '../rating/entities/rating.entity';
 import { GetRoomsResponseDTO } from './dto/getRooms.response';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class RoomService {
@@ -27,6 +28,7 @@ export class RoomService {
 		@InjectModel(Rating.name) private ratingModel: Model<Rating>,
 		private readonly imgurService: ImgurService,
 		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+		private readonly userService: UserService,
 	) {}
 
 	/**
@@ -296,6 +298,16 @@ export class RoomService {
 
 		const ratings = await this.ratingModel.find({ roomId: room._id }).exec();
 
+		const enrichedRatings = await Promise.all(
+			ratings.map(async (rating) => {
+				const user = await this.userService.getUser(rating.userId.toString());
+				return {
+					...rating.toObject(),
+					fullName: user?.firstName + ' ' + user?.lastName || 'Ẩn danh',
+				};
+			}),
+		);
+
 		const totalRatings = ratings.length;
 		const averageScores = {
 			cleanliness: 0,
@@ -376,7 +388,7 @@ export class RoomService {
 		return {
 			room,
 			roomType,
-			ratings,
+			ratings: enrichedRatings,
 			averageScores,
 			ratingCount: totalRatings,
 			ratingCounts,
