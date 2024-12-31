@@ -42,4 +42,8 @@ export class CreateInvoiceDto {
 	@IsNotEmpty()
 	@IsString()
 	bookingId: string;
+
+	@IsNotEmpty()
+	@IsString()
+	status: string;
 }
