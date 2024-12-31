@@ -34,7 +34,7 @@ export class EmailService {
 
 	async sendEmail(data: EmailDataInterface): Promise<void> {
 		await this.transporter.sendMail({
-			from: data.from ?? 'noreply@example.com',
+			from: this.configService.get<string>('EMAIL_FROM'),
 			...data,
 		});
 	}

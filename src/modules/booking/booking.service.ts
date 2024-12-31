@@ -1,3 +1,4 @@
+import { ServiceTypeService } from './../serviceType/serviceType.service';
 import {
 	Injectable,
 	BadRequestException,
@@ -24,12 +25,14 @@ import { InvoiceService } from '../invoice/invoice.service';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
-import { User } from '../user/entities/user.entity';
+import { BookingServiceDTO } from './dto/bookingService.dto';
+import { User, UserRole } from '../user/entities/user.entity';
 
 @Injectable()
 export class BookingService {
 	constructor(
-		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+		@InjectModel(Booking.name)
+		private readonly bookingModel: Model<BookingDocument>,
 		private readonly roomService: RoomService,
 		private readonly serviceService: ServiceService,
 		private readonly promotionService: PromotionService,
@@ -38,6 +41,7 @@ export class BookingService {
 		private readonly configService: ConfigService,
 		private readonly emailService: EmailService,
 		private readonly userService: UserService,
+		private readonly serviceTypeService: ServiceTypeService,
 	) {}
 
 	private async createTransferInvoice(bookingId: string) {
@@ -489,5 +493,276 @@ export class BookingService {
 			checkedIn,
 			checkedOut,
 		};
+	}
+
+	async getServiceStatusCount(user: User): Promise<{
+		pending: number;
+		served: number;
+	}> {
+		const bookings = await this.bookingModel.find().exec();
+
+		let pending = 0;
+		let served = 0;
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+				if (!fullService) continue;
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
+				if (!fullServiceType) continue;
+
+				if (user.role === UserRole.Service_Staff && user.serviceTypeId) {
+					if (fullService.serviceTypeId !== user.serviceTypeId.toString()) {
+						continue;
+					}
+				}
+
+				if (service.status === ServiceStatus.Pending) {
+					pending += 1;
+				} else if (service.status === ServiceStatus.Served) {
+					served += 1;
+				}
+			}
+		}
+
+		return {
+			pending,
+			served,
+		};
+	}
+
+	async getAllBookingService(
+		query: PaginateParams & { status?: string },
+		user: User,
+	): Promise<PaginateData<BookingServiceDTO>> {
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'checkinDate',
+			sortOrder = SortOrder.DESC,
+			status,
+		} = query;
+
+		const skip = (page - 1) * limit;
+
+		const bookings = await this.bookingModel.find().exec();
+		const allDocs: BookingServiceDTO[] = [];
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			const room = await this.roomService.findOne(booking.roomId.toString());
+
+			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
+				if (user.role === UserRole.Service_Staff && user.serviceTypeId) {
+					if (
+						!fullService ||
+						fullService.serviceTypeId !== user.serviceTypeId.toString()
+					) {
+						continue;
+					}
+				}
+
+				if (status && service.status !== status) {
+					continue;
+				}
+
+				allDocs.push({
+					id: service.id,
+					serviceName: service.name,
+					serviceTypeName: fullServiceType.typeName,
+					roomNumber: room.roomNumber,
+					checkinDate: booking.checkinDate,
+					checkoutDate: booking.checkoutDate,
+					quantity: service.quantity,
+					status: service.status,
+					price: service.price,
+				});
+			}
+		}
+
+		// Sắp xếp dữ liệu
+		const sortedDocs = allDocs.sort((a, b) => {
+			if (sortOrder === SortOrder.ASC) {
+				if (a[sortBy] > b[sortBy]) return 1;
+				if (a[sortBy] < b[sortBy]) return -1;
+				return 0;
+			} else {
+				if (a[sortBy] < b[sortBy]) return 1;
+				if (a[sortBy] > b[sortBy]) return -1;
+				return 0;
+			}
+		});
+
+		// Phân trang
+		const totalDocs = sortedDocs.length;
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		const docs = sortedDocs.slice(skip, skip + limit);
+		const hasNextPage = page < totalPages;
+		const hasPrevPage = page > 1;
+		const nextPage = hasNextPage ? page + 1 : null;
+		const prevPage = hasPrevPage ? page - 1 : null;
+		const pagingCounter = skip + 1;
+
+		return {
+			docs,
+			totalDocs,
+			page,
+			limit,
+			totalPages,
+			hasNextPage,
+			hasPrevPage,
+			nextPage,
+			prevPage,
+			pagingCounter,
+		};
+	}
+
+	async getBookingServicesByServiceType(
+		query: PaginateParams & { status?: string },
+		serviceTypeId: string,
+	): Promise<PaginateData<BookingServiceDTO>> {
+		if (!Types.ObjectId.isValid(serviceTypeId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'checkinDate',
+			sortOrder = SortOrder.DESC,
+			status,
+		} = query;
+
+		const skip = (page - 1) * limit;
+
+		const bookings = await this.bookingModel.find().exec();
+		const allDocs: BookingServiceDTO[] = [];
+
+		for (const booking of bookings) {
+			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			const room = await this.roomService.findOne(booking.roomId.toString());
+
+			for (const service of booking.services as any[]) {
+				const fullService = await this.serviceService.findOne(
+					service.serviceId,
+				);
+				if (fullService.serviceTypeId !== serviceTypeId) {
+					continue;
+				}
+
+				const fullServiceType = await this.serviceTypeService.findOne(
+					fullService.serviceTypeId,
+				);
+
+				if (status && service.status !== status) {
+					continue;
+				}
+
+				allDocs.push({
+					id: service.id,
+					serviceName: service.name,
+					serviceTypeName: fullServiceType.typeName,
+					roomNumber: room.roomNumber,
+					checkinDate: booking.checkinDate,
+					checkoutDate: booking.checkoutDate,
+					quantity: service.quantity,
+					status: service.status,
+					price: service.price,
+				});
+			}
+		}
+
+		const sortedDocs = allDocs.sort((a, b) => {
+			if (sortOrder === SortOrder.ASC) {
+				if (a[sortBy] > b[sortBy]) return 1;
+				if (a[sortBy] < b[sortBy]) return -1;
+				return 0;
+			} else {
+				if (a[sortBy] < b[sortBy]) return 1;
+				if (a[sortBy] > b[sortBy]) return -1;
+				return 0;
+			}
+		});
+
+		const totalDocs = sortedDocs.length;
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		const docs = sortedDocs.slice(skip, skip + limit);
+		const hasNextPage = page < totalPages;
+		const hasPrevPage = page > 1;
+		const nextPage = hasNextPage ? page + 1 : null;
+		const prevPage = hasPrevPage ? page - 1 : null;
+		const pagingCounter = skip + 1;
+
+		return {
+			docs,
+			totalDocs,
+			page,
+			limit,
+			totalPages,
+			hasNextPage,
+			hasPrevPage,
+			nextPage,
+			prevPage,
+			pagingCounter,
+		};
+	}
+
+	async updateBookingServiceStatus(bookingServiceId: string): Promise<Booking> {
+		if (!Types.ObjectId.isValid(bookingServiceId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+		const booking = await this.bookingModel
+			.findOne({
+				'services._id': bookingServiceId,
+			})
+			.exec();
+
+		if (!booking) {
+			throw new NotFoundException(
+				`Service with ID ${bookingServiceId} not found in any booking`,
+			);
+		}
+
+		const service = booking.services.find(
+			(service: any) => service._id.toString() === bookingServiceId,
+		);
+
+		if (!service) {
+			throw new NotFoundException(
+				`Service with ID ${bookingServiceId} not found in booking`,
+			);
+		}
+
+		if (service.status !== ServiceStatus.Pending) {
+			throw new BadRequestException('Service is already served or not pending');
+		}
+
+		service.status = ServiceStatus.Served;
+
+		await booking.save();
+		return booking;
 	}
 }

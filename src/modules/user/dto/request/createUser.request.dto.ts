@@ -24,4 +24,8 @@ export class CreateUserRequestDTO {
 	@IsEnum(UserRole)
 	@IsOptional()
 	role?: UserRole;
+
+	@IsOptional()
+	@IsString()
+	serviceTypeId?: string;
 }

@@ -11,11 +11,10 @@ export class RoomDetailDTO {
 	roomType: RoomType;
 
 	@ApiProperty({
-		description: 'List of ratings for the room',
-		type: [Rating],
-		nullable: true,
+		description: 'List of ratings for the room, including username',
+		type: [Object],
 	})
-	ratings?: Rating[];
+	ratings?: (Rating & { fullName: string })[];
 
 	@ApiProperty({
 		description: 'Average scores for each rating category',

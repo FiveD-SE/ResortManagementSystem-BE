@@ -9,6 +9,7 @@ import { Rating, RatingSchema } from '../rating/entities/rating.entity';
 import { RatingService } from '../rating/rating.service';
 import { RatingController } from '../rating/rating.controller';
 import { BookingModule } from '../booking/booking.module';
+import { UserModule } from '../user/user.module';
 
 @Module({
 	imports: [
@@ -18,6 +19,7 @@ import { BookingModule } from '../booking/booking.module';
 		]),
 		MongooseModule.forFeature([{ name: Rating.name, schema: RatingSchema }]),
 		ImgurModule,
+		UserModule,
 		forwardRef(() => BookingModule),
 	],
 	controllers: [RoomController, RatingController],

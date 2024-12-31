@@ -4,7 +4,7 @@ import {
 	BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
 import { Room, RoomDocument } from './entities/room.entity';
@@ -18,6 +18,7 @@ import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Rating } from '../rating/entities/rating.entity';
 import { GetRoomsResponseDTO } from './dto/getRooms.response';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
+import { UserService } from '../user/user.service';
 
 @Injectable()
 export class RoomService {
@@ -27,6 +28,7 @@ export class RoomService {
 		@InjectModel(Rating.name) private ratingModel: Model<Rating>,
 		private readonly imgurService: ImgurService,
 		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+		private readonly userService: UserService,
 	) {}
 
 	/**
@@ -46,7 +48,7 @@ export class RoomService {
 		}
 
 		return {
-			id: room.id,
+			id: room._id.toString(),
 			roomNumber: room.roomNumber,
 			roomTypeId: room.roomTypeId.toString(),
 			status: room.status,
@@ -124,7 +126,7 @@ export class RoomService {
 					},
 					{ $sort: sortOptions },
 					{ $skip: skip },
-					{ $limit: limit },
+					{ $limit: Number(limit) },
 				])
 				.exec(),
 		]);
@@ -138,7 +140,7 @@ export class RoomService {
 			docs: roomDTOs,
 			totalDocs: count,
 			page,
-			limit,
+			limit: Number(limit),
 			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
@@ -164,10 +166,15 @@ export class RoomService {
 			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
 		};
 
+		console.log(roomTypeId);
+
 		const [count, rooms] = await Promise.all([
-			this.roomModel.countDocuments().exec(),
+			this.roomModel.countDocuments({ roomTypeId }).exec(),
 			this.roomModel
 				.aggregate([
+					{
+						$match: { roomTypeId: roomTypeId },
+					},
 					{
 						$lookup: {
 							from: 'bookings',
@@ -191,10 +198,11 @@ export class RoomService {
 					},
 					{ $sort: sortOptions },
 					{ $skip: skip },
-					{ $limit: limit },
+					{ $limit: Number(limit) },
 				])
 				.exec(),
 		]);
+
 		const totalPages = Math.ceil(count / limit);
 		const roomDTOs = await Promise.all(
 			rooms.map((room) => this.mapToRoomDTO(room, room.bookingCount)),
@@ -204,7 +212,7 @@ export class RoomService {
 			docs: roomDTOs,
 			totalDocs: count,
 			page,
-			limit,
+			limit: Number(limit),
 			totalPages,
 			hasNextPage: page < totalPages,
 			hasPrevPage: page > 1,
@@ -290,6 +298,16 @@ export class RoomService {
 
 		const ratings = await this.ratingModel.find({ roomId: room._id }).exec();
 
+		const enrichedRatings = await Promise.all(
+			ratings.map(async (rating) => {
+				const user = await this.userService.getUser(rating.userId.toString());
+				return {
+					...rating.toObject(),
+					fullName: user?.firstName + ' ' + user?.lastName || 'Ẩn danh',
+				};
+			}),
+		);
+
 		const totalRatings = ratings.length;
 		const averageScores = {
 			cleanliness: 0,
@@ -370,11 +388,39 @@ export class RoomService {
 		return {
 			room,
 			roomType,
-			ratings,
+			ratings: enrichedRatings,
 			averageScores,
 			ratingCount: totalRatings,
 			ratingCounts,
 			occupiedDates,
+		};
+	}
+
+	async getRoomAvailabilityToday(): Promise<{
+		availableRooms: number;
+		bookedRooms: number;
+		totalRooms: number;
+	}> {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const tomorrow = new Date(today);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+
+		const totalRooms = await this.roomModel.countDocuments().exec();
+
+		const bookedRooms = await this.bookingModel
+			.countDocuments({
+				checkinDate: { $lte: tomorrow },
+				checkoutDate: { $gte: today },
+			})
+			.exec();
+
+		const availableRooms = totalRooms - bookedRooms;
+
+		return {
+			availableRooms,
+			bookedRooms,
+			totalRooms,
 		};
 	}
 }

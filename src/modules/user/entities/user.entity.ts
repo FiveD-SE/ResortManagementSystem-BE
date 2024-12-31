@@ -1,7 +1,7 @@
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Exclude } from 'class-transformer';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 import * as paginate from 'mongoose-paginate-v2';
 
 export enum UserRole {
@@ -45,6 +45,9 @@ export class User extends BaseEntity {
 
 	@Prop({ default: true, type: Boolean })
 	isActive: boolean;
+
+	@Prop({ type: Types.ObjectId, ref: 'ServiceType' })
+	serviceTypeId?: Types.ObjectId;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
