@@ -105,7 +105,7 @@ export class BookingController {
 		@Param('id') id: string,
 		@Req() req: RequestWithUser,
 	): Promise<Booking> {
-		const booking = await this.bookingService.getBookingById(id);
+		const booking = await this.bookingService.findBookingById(id);
 		if (
 			req.user.role === UserRole.User &&
 			booking.customerId._id.toString() !== req.user.id
@@ -140,7 +140,7 @@ export class BookingController {
 		@Req() req: RequestWithUser,
 	): Promise<Booking> {
 		const userId = req.user._id.toString();
-		const booking = await this.bookingService.getBookingById(bookingId);
+		const booking = await this.bookingService.findBookingById(bookingId);
 
 		if (booking.customerId._id.toString() !== userId) {
 			throw new BadRequestException(
