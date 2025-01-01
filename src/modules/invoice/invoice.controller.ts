@@ -6,6 +6,8 @@ import {
 	Param,
 	Query,
 	UseGuards,
+	Req,
+	BadRequestException,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InvoiceService } from './invoice.service';
@@ -16,12 +18,17 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { Invoice } from './entities/invoice.entity';
 import { Public } from '@/decorators/auth.decorator';
+import { RequestWithUser } from '@/types/request.type';
+import { BookingService } from '../booking/booking.service';
 
 @ApiTags('Invoices')
 @Controller('invoices')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
 export class InvoiceController {
-	constructor(private readonly invoiceService: InvoiceService) {}
+	constructor(
+		private readonly invoiceService: InvoiceService,
+		private readonly bookingService: BookingService,
+	) {}
 
 	@Post()
 	@Roles(UserRole.Admin)
@@ -65,5 +72,33 @@ export class InvoiceController {
 	@ApiResponse({ status: 404, description: 'Invoice not found' })
 	async getInvoiceById(@Param('id') id: string): Promise<Invoice> {
 		return this.invoiceService.getInvoiceById(id);
+	}
+
+	@Get('booking/:bookingId')
+	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
+	@ApiOperation({ summary: 'Get all invoices for a booking' })
+	@ApiResponse({
+		status: 200,
+		description: 'List of invoices for the booking',
+		type: [Invoice],
+	})
+	@ApiResponse({ status: 400, description: 'Invalid booking ID format' })
+	@ApiResponse({ status: 404, description: 'Booking not found' })
+	async getInvoicesByBookingId(
+		@Param('bookingId') bookingId: string,
+		@Req() req: RequestWithUser,
+	): Promise<Invoice[]> {
+		if (req.user.role === UserRole.User) {
+			const booking = await this.bookingService.findBookingById(bookingId);
+			console.log('Booking:', booking);
+			console.log('User:', req.user);
+			if (booking.customerId._id.toString() !== req.user._id.toString()) {
+				throw new BadRequestException(
+					'You are not authorized to view these invoices',
+				);
+			}
+		}
+
+		return this.invoiceService.findByBookingId(bookingId);
 	}
 }

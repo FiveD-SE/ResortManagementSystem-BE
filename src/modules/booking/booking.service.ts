@@ -45,7 +45,7 @@ export class BookingService {
 	) {}
 
 	private async createTransferInvoice(bookingId: string) {
-		const booking = await this.getBookingById(bookingId);
+		const booking = await this.findBookingById(bookingId);
 
 		console.log('booking', booking);
 
@@ -67,8 +67,10 @@ export class BookingService {
 			})),
 		];
 
+		const customer = booking.customerId as unknown as User;
+
 		const createInvoiceDto: CreateInvoiceDto = {
-			userId: booking.customerId.toString(),
+			userId: customer._id.toString(),
 			amount: booking.totalAmount,
 			description: 'Transfer booking',
 			returnUrl:
@@ -83,8 +85,6 @@ export class BookingService {
 			bookingId: bookingId,
 			status: 'PENDING',
 		};
-
-		const customer = booking.customerId as unknown as User;
 
 		const invoice = await this.invoiceService.createInvoice(createInvoiceDto);
 
@@ -242,7 +242,7 @@ export class BookingService {
 		};
 	}
 
-	async getBookingById(id: string): Promise<Booking> {
+	async findBookingById(id: string): Promise<Booking> {
 		const booking = await this.bookingModel
 			.findById(id)
 			.populate({
