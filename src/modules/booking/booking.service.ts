@@ -119,13 +119,15 @@ export class BookingService {
 			(1000 * 60 * 60 * 24);
 		let totalAmount = room.pricePerNight * totalNight;
 
-		if (dto.promotionId) {
+		let promotionId = null;
+		if (dto.promotionId && dto.promotionId.trim()) {
 			try {
 				await this.userPromotionService.usePromotion(userId, dto.promotionId);
 				const promotion = await this.promotionService.getPromotionById(
 					dto.promotionId,
 				);
 				totalAmount = totalAmount * (1 - promotion.discount / 100);
+				promotionId = dto.promotionId;
 			} catch (error) {
 				if (error instanceof BadRequestException) {
 					throw error;
@@ -162,7 +164,7 @@ export class BookingService {
 			checkinDate: dto.checkinDate,
 			checkoutDate: dto.checkoutDate,
 			services: bookingServices,
-			promotionId: dto.promotionId || null,
+			promotionId: promotionId,
 			totalAmount,
 			status: BookingStatus.Pending,
 			guests: dto.guests,
