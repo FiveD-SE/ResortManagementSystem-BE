@@ -434,6 +434,8 @@ export class RoomService {
 		sortOrder: 'asc' | 'desc' = 'desc',
 		page = 1,
 		limit = 10,
+		checkinDate?: Date,
+		checkoutDate?: Date,
 	): Promise<PaginateData<Room>> {
 		const skip = (page - 1) * limit;
 
@@ -441,6 +443,7 @@ export class RoomService {
 			{
 				$addFields: {
 					roomTypeId: { $toObjectId: '$roomTypeId' },
+					stringId: { $toString: '$_id' },
 				},
 			},
 			{
@@ -453,6 +456,14 @@ export class RoomService {
 			},
 			{ $unwind: '$roomType' },
 			{
+				$lookup: {
+					from: 'bookings',
+					localField: 'stringId',
+					foreignField: 'roomId',
+					as: 'bookings',
+				},
+			},
+			{
 				$project: {
 					id: '$_id',
 					roomNumber: 1,
@@ -461,9 +472,35 @@ export class RoomService {
 					pricePerNight: 1,
 					images: 1,
 					averageRating: 1,
-					roomTypeName: '$roomType.typeName',
 					roomType: '$roomType',
+					roomTypeName: '$roomType.typeName',
 					bookingCount: { $size: { $ifNull: ['$bookings', []] } },
+					bookings: 1,
+				},
+			},
+			{
+				$addFields: {
+					isAvailable: {
+						$not: {
+							$anyElementTrue: {
+								$map: {
+									input: '$bookings',
+									as: 'booking',
+									in: {
+										$and: [
+											{ $lt: ['$$booking.checkinDate', checkoutDate] },
+											{ $gt: ['$$booking.checkoutDate', checkinDate] },
+										],
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				$match: {
+					isAvailable: true,
 				},
 			},
 		];

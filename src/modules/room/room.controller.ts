@@ -135,6 +135,18 @@ export class RoomController {
 		type: Number,
 		description: 'Items per page',
 	})
+	@ApiQuery({
+		name: 'checkinDate',
+		required: false,
+		type: Date,
+		description: 'Check-in date',
+	})
+	@ApiQuery({
+		name: 'checkoutDate',
+		required: false,
+		type: Date,
+		description: 'Check-out date',
+	})
 	async filterRoomsByRoomTypeFields(
 		@Query('amenities') amenitiesRaw?: string | string[],
 		@Query('guestAmount') guestAmountRaw?: string,
@@ -145,6 +157,8 @@ export class RoomController {
 		@Query('sortOrder') sortOrder?: 'asc' | 'desc',
 		@Query('page') page = 1,
 		@Query('limit') limit = 10,
+		@Query('checkinDate') checkinDate?: string,
+		@Query('checkoutDate') checkoutDate?: string,
 	): Promise<PaginateData<Room>> {
 		const guestAmount = guestAmountRaw
 			? parseInt(guestAmountRaw, 10)
@@ -158,6 +172,8 @@ export class RoomController {
 			: amenitiesRaw
 				? [amenitiesRaw]
 				: undefined;
+		const checkin = checkinDate ? new Date(checkinDate) : undefined;
+		const checkout = checkoutDate ? new Date(checkoutDate) : undefined;
 
 		return this.roomService.filterRoomsByRoomTypeFields(
 			amenities,
@@ -169,6 +185,8 @@ export class RoomController {
 			sortOrder as 'asc' | 'desc',
 			page,
 			limit,
+			checkin,
+			checkout,
 		);
 	}
 
