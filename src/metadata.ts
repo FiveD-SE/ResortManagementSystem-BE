@@ -128,6 +128,7 @@ export default async () => {
 					{
 						RefreshTokenRequestDTO: {
 							refreshToken: { required: true, type: () => String },
+							userId: { required: true, type: () => String },
 						},
 					},
 				],

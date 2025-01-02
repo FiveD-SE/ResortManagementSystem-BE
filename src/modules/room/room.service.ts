@@ -429,6 +429,7 @@ export class RoomService {
 		guestAmount?: number,
 		bedAmount?: number,
 		bedroomAmount?: number,
+		sharedBathAmount?: number,
 		searchKeyFeature?: string,
 		sortBy?: 'averageRating' | 'pricePerNight',
 		sortOrder: 'asc' | 'desc' = 'desc',
@@ -517,6 +518,9 @@ export class RoomService {
 		}
 		if (bedroomAmount !== undefined) {
 			match['roomType.bedroomAmount'] = { $gte: bedroomAmount };
+		}
+		if (sharedBathAmount !== undefined) {
+			match['roomType.sharedBathAmount'] = { $gte: sharedBathAmount };
 		}
 		if (searchKeyFeature) {
 			match.$or = [

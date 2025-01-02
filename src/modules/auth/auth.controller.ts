@@ -103,13 +103,15 @@ export class AuthController {
 		return await this.userService.getUser(user.email);
 	}
 
-	@UseGuards(JwtRefreshTokenGuard)
 	@ApiPost({ path: 'refresh-token' })
 	@ApiBody({
 		type: RefreshTokenRequestDTO,
 	})
-	async refreshAccessToken(@Req() request: RequestWithUser) {
-		const { user } = request;
+	async refreshAccessToken(@Body() dto: RefreshTokenRequestDTO) {
+		const user = await this.authService.getUserIfRefreshTokenMatched(
+			dto.userId,
+			dto.refreshToken,
+		);
 		const accessToken = this.authService.generateAccessToken({
 			userID: user._id.toString(),
 		});
