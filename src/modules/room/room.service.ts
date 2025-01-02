@@ -4,7 +4,7 @@ import {
 	BadRequestException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
 import { Room, RoomDocument } from './entities/room.entity';
@@ -465,21 +465,6 @@ export class RoomService {
 				},
 			},
 			{
-				$project: {
-					id: '$_id',
-					roomNumber: 1,
-					roomTypeId: 1,
-					status: 1,
-					pricePerNight: 1,
-					images: 1,
-					averageRating: 1,
-					roomType: '$roomType',
-					roomTypeName: '$roomType.typeName',
-					bookingCount: { $size: { $ifNull: ['$bookings', []] } },
-					bookings: 1,
-				},
-			},
-			{
 				$addFields: {
 					isAvailable: {
 						$not: {
@@ -502,6 +487,52 @@ export class RoomService {
 			{
 				$match: {
 					isAvailable: true,
+				},
+			},
+			{
+				$addFields: {
+					nextAvailableWeek: {
+						$let: {
+							vars: {
+								nextWeekStart: {
+									$cond: {
+										if: { $eq: [{ $size: '$bookings' }, 0] },
+										then: new Date(),
+										else: {
+											$add: [
+												{
+													$max: '$bookings.checkoutDate',
+												},
+												1 * 24 * 60 * 60 * 1000,
+											],
+										},
+									},
+								},
+							},
+							in: {
+								start: '$$nextWeekStart',
+								end: {
+									$add: ['$$nextWeekStart', 7 * 24 * 60 * 60 * 1000],
+								},
+							},
+						},
+					},
+				},
+			},
+			{
+				$project: {
+					id: '$_id',
+					roomNumber: 1,
+					roomTypeId: 1,
+					status: 1,
+					pricePerNight: 1,
+					images: 1,
+					averageRating: 1,
+					roomType: '$roomType',
+					roomTypeName: '$roomType.typeName',
+					bookingCount: { $size: { $ifNull: ['$bookings', []] } },
+					bookings: 1,
+					nextAvailableWeek: 1,
 				},
 			},
 		];
