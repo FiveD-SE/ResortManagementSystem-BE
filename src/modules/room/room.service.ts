@@ -495,12 +495,18 @@ export class RoomService {
 						$let: {
 							vars: {
 								nextWeekStart: {
-									$add: [
-										{
-											$max: '$bookings.checkoutDate',
+									$cond: {
+										if: { $eq: [{ $size: '$bookings' }, 0] },
+										then: new Date(),
+										else: {
+											$add: [
+												{
+													$max: '$bookings.checkoutDate',
+												},
+												1 * 24 * 60 * 60 * 1000,
+											],
 										},
-										1 * 24 * 60 * 60 * 1000,
-									],
+									},
 								},
 							},
 							in: {
