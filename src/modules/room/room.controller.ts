@@ -123,15 +123,29 @@ export class RoomController {
 		enum: ['asc', 'desc'],
 		description: 'Sort order (asc/desc)',
 	})
+	@ApiQuery({
+		name: 'page',
+		required: false,
+		type: Number,
+		description: 'Page number',
+	})
+	@ApiQuery({
+		name: 'limit',
+		required: false,
+		type: Number,
+		description: 'Items per page',
+	})
 	async filterRoomsByRoomTypeFields(
-		@Query('amenities') amenities?: string[],
+		@Query('amenities') amenitiesRaw?: string | string[],
 		@Query('guestAmount') guestAmountRaw?: string,
 		@Query('bedAmount') bedAmountRaw?: string,
 		@Query('bedroomAmount') bedroomAmountRaw?: string,
 		@Query('searchKeyFeature') searchKeyFeature?: string,
-		@Query('sortBy') sortBy?: 'pricePerNight' | 'averageRating',
+		@Query('sortBy') sortBy?: 'averageRating' | 'pricePerNight',
 		@Query('sortOrder') sortOrder?: 'asc' | 'desc',
-	): Promise<Room[]> {
+		@Query('page') page = 1,
+		@Query('limit') limit = 10,
+	): Promise<PaginateData<Room>> {
 		const guestAmount = guestAmountRaw
 			? parseInt(guestAmountRaw, 10)
 			: undefined;
@@ -139,10 +153,11 @@ export class RoomController {
 		const bedroomAmount = bedroomAmountRaw
 			? parseInt(bedroomAmountRaw, 10)
 			: undefined;
-
-		if (amenities && !Array.isArray(amenities)) {
-			amenities = [amenities];
-		}
+		const amenities = Array.isArray(amenitiesRaw)
+			? amenitiesRaw
+			: amenitiesRaw
+				? [amenitiesRaw]
+				: undefined;
 
 		return this.roomService.filterRoomsByRoomTypeFields(
 			amenities,
@@ -152,6 +167,8 @@ export class RoomController {
 			searchKeyFeature,
 			sortBy,
 			sortOrder as 'asc' | 'desc',
+			page,
+			limit,
 		);
 	}
 
