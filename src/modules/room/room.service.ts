@@ -432,7 +432,11 @@ export class RoomService {
 		searchKeyFeature?: string,
 		sortBy?: 'averageRating' | 'pricePerNight',
 		sortOrder: 'asc' | 'desc' = 'desc',
-	): Promise<Room[]> {
+		page = 1,
+		limit = 10,
+	): Promise<PaginateData<Room>> {
+		const skip = (page - 1) * limit;
+
 		const pipeline: any[] = [
 			{
 				$addFields: {
@@ -448,6 +452,20 @@ export class RoomService {
 				},
 			},
 			{ $unwind: '$roomType' },
+			{
+				$project: {
+					id: '$_id',
+					roomNumber: 1,
+					roomTypeId: 1,
+					status: 1,
+					pricePerNight: 1,
+					images: 1,
+					averageRating: 1,
+					roomTypeName: '$roomType.typeName',
+					roomType: '$roomType',
+					bookingCount: { $size: { $ifNull: ['$bookings', []] } },
+				},
+			},
 		];
 
 		const match: any = {};
@@ -455,13 +473,13 @@ export class RoomService {
 			match['roomType.amenities'] = { $all: amenities };
 		}
 		if (guestAmount !== undefined) {
-			match['roomType.guestAmount'] = guestAmount;
+			match['roomType.guestAmount'] = { $gte: guestAmount };
 		}
 		if (bedAmount !== undefined) {
-			match['roomType.bedAmount'] = bedAmount;
+			match['roomType.bedAmount'] = { $gte: bedAmount };
 		}
 		if (bedroomAmount !== undefined) {
-			match['roomType.bedroomAmount'] = bedroomAmount;
+			match['roomType.bedroomAmount'] = { $gte: bedroomAmount };
 		}
 		if (searchKeyFeature) {
 			match['roomType.keyFeatures'] = {
@@ -479,6 +497,29 @@ export class RoomService {
 			pipeline.push({ $sort: sortStage });
 		}
 
-		return this.roomModel.aggregate(pipeline).exec();
+		const countPipeline = [...pipeline, { $count: 'totalDocs' }];
+
+		const [countResult, docs] = await Promise.all([
+			this.roomModel.aggregate(countPipeline).exec(),
+			this.roomModel
+				.aggregate([...pipeline, { $skip: skip }, { $limit: Number(limit) }])
+				.exec(),
+		]);
+
+		const totalDocs = countResult.length > 0 ? countResult[0].totalDocs : 0;
+		const totalPages = Math.ceil(totalDocs / limit);
+
+		return {
+			docs,
+			totalDocs,
+			page,
+			limit,
+			totalPages,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			pagingCounter: skip + 1,
+		};
 	}
 }
