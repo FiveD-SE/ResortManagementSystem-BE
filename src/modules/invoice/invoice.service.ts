@@ -8,7 +8,7 @@ import { Invoice, InvoiceDocument } from './entities/invoice.entity';
 import { CreateInvoiceDto } from './dto/createInvoice.dto';
 import { payOS } from '@/configs/payOS.config';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model } from 'mongoose';
 
 const MAX_SAFE_INTEGER = 9007199254740991;
 const MAX_ORDER_CODE = Math.floor(MAX_SAFE_INTEGER / 10);

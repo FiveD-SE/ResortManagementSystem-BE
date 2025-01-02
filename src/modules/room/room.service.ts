@@ -423,4 +423,62 @@ export class RoomService {
 			totalRooms,
 		};
 	}
+
+	async filterRoomsByRoomTypeFields(
+		amenities?: string[],
+		guestAmount?: number,
+		bedAmount?: number,
+		bedroomAmount?: number,
+		searchKeyFeature?: string,
+		sortBy?: 'averageRating' | 'pricePerNight',
+		sortOrder: 'asc' | 'desc' = 'desc',
+	): Promise<Room[]> {
+		const pipeline: any[] = [
+			{
+				$addFields: {
+					roomTypeId: { $toObjectId: '$roomTypeId' },
+				},
+			},
+			{
+				$lookup: {
+					from: 'roomtypes',
+					localField: 'roomTypeId',
+					foreignField: '_id',
+					as: 'roomType',
+				},
+			},
+			{ $unwind: '$roomType' },
+		];
+
+		const match: any = {};
+		if (amenities && amenities.length > 0) {
+			match['roomType.amenities'] = { $all: amenities };
+		}
+		if (guestAmount !== undefined) {
+			match['roomType.guestAmount'] = guestAmount;
+		}
+		if (bedAmount !== undefined) {
+			match['roomType.bedAmount'] = bedAmount;
+		}
+		if (bedroomAmount !== undefined) {
+			match['roomType.bedroomAmount'] = bedroomAmount;
+		}
+		if (searchKeyFeature) {
+			match['roomType.keyFeatures'] = {
+				$regex: searchKeyFeature,
+				$options: 'i',
+			};
+		}
+		if (Object.keys(match).length > 0) {
+			pipeline.push({ $match: match });
+		}
+
+		if (sortBy) {
+			const sortStage: Record<string, 1 | -1> = {};
+			sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;
+			pipeline.push({ $sort: sortStage });
+		}
+
+		return this.roomModel.aggregate(pipeline).exec();
+	}
 }
