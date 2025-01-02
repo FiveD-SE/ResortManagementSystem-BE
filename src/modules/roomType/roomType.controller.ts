@@ -5,6 +5,7 @@ import {
 	Delete,
 	Get,
 	Param,
+	ParseIntPipe,
 	Patch,
 	Post,
 	UseGuards,
@@ -67,6 +68,36 @@ export class RoomTypeController {
 		}
 
 		return this.roomTypeService.findAll(query);
+	}
+
+	@Get('filter')
+	@ApiQuery({ name: 'amenities', required: false, type: [String] })
+	@ApiQuery({ name: 'guestAmount', required: false, type: Number })
+	@ApiQuery({ name: 'bedAmount', required: false, type: Number })
+	@ApiQuery({ name: 'bedroomAmount', required: false, type: Number })
+	@ApiQuery({ name: 'searchKeyFeature', required: false, type: String })
+	async filterRoomTypes(
+		@Query('amenities') amenities?: string[],
+		@Query('guestAmount') guestAmountRaw?: string,
+		@Query('bedAmount') bedAmountRaw?: string,
+		@Query('bedroomAmount') bedroomAmountRaw?: string,
+		@Query('searchKeyFeature') searchKeyFeature?: string,
+	): Promise<RoomType[]> {
+		const guestAmount = guestAmountRaw
+			? parseInt(guestAmountRaw, 10)
+			: undefined;
+		const bedAmount = bedAmountRaw ? parseInt(bedAmountRaw, 10) : undefined;
+		const bedroomAmount = bedroomAmountRaw
+			? parseInt(bedroomAmountRaw, 10)
+			: undefined;
+
+		return this.roomTypeService.filterRoomTypes(
+			amenities,
+			guestAmount,
+			bedAmount,
+			bedroomAmount,
+			searchKeyFeature,
+		);
 	}
 
 	@Get(':id')

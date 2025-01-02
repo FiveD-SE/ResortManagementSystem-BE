@@ -83,4 +83,32 @@ export class RoomTypeService {
 			throw new NotFoundException(`RoomType with ID ${id} not found`);
 		}
 	}
+
+	async filterRoomTypes(
+		amenities?: string[],
+		guestAmount?: number,
+		bedAmount?: number,
+		bedroomAmount?: number,
+		searchKeyFeature?: string,
+	): Promise<RoomType[]> {
+		const conditions: Record<string, any> = {};
+
+		if (amenities && amenities.length > 0) {
+			conditions.amenities = { $all: amenities };
+		}
+		if (guestAmount !== undefined) {
+			conditions.guestAmount = guestAmount;
+		}
+		if (bedAmount !== undefined) {
+			conditions.bedAmount = bedAmount;
+		}
+		if (bedroomAmount !== undefined) {
+			conditions.bedroomAmount = bedroomAmount;
+		}
+		if (searchKeyFeature) {
+			conditions.keyFeatures = { $regex: searchKeyFeature, $options: 'i' };
+		}
+
+		return this.roomTypeModel.find(conditions).exec();
+	}
 }
