@@ -110,6 +110,7 @@ export class RoomController {
 	@ApiQuery({ name: 'guestAmount', required: false, type: Number })
 	@ApiQuery({ name: 'bedAmount', required: false, type: Number })
 	@ApiQuery({ name: 'bedroomAmount', required: false, type: Number })
+	@ApiQuery({ name: 'sharedBathAmount', required: false, type: Number })
 	@ApiQuery({ name: 'searchKeyFeature', required: false, type: String })
 	@ApiQuery({
 		name: 'sortBy',
@@ -152,6 +153,7 @@ export class RoomController {
 		@Query('guestAmount') guestAmountRaw?: string,
 		@Query('bedAmount') bedAmountRaw?: string,
 		@Query('bedroomAmount') bedroomAmountRaw?: string,
+		@Query('sharedBathAmount') sharedBathAmountRaw?: string,
 		@Query('searchKeyFeature') searchKeyFeature?: string,
 		@Query('sortBy') sortBy?: 'averageRating' | 'pricePerNight',
 		@Query('sortOrder') sortOrder?: 'asc' | 'desc',
@@ -167,6 +169,9 @@ export class RoomController {
 		const bedroomAmount = bedroomAmountRaw
 			? parseInt(bedroomAmountRaw, 10)
 			: undefined;
+		const sharedBathAmount = sharedBathAmountRaw
+			? parseInt(sharedBathAmountRaw, 10)
+			: undefined;
 		const amenities = Array.isArray(amenitiesRaw)
 			? amenitiesRaw
 			: amenitiesRaw
@@ -180,6 +185,7 @@ export class RoomController {
 			guestAmount,
 			bedAmount,
 			bedroomAmount,
+			sharedBathAmount,
 			searchKeyFeature,
 			sortBy,
 			sortOrder as 'asc' | 'desc',
