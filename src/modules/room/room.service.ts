@@ -482,10 +482,11 @@ export class RoomService {
 			match['roomType.bedroomAmount'] = { $gte: bedroomAmount };
 		}
 		if (searchKeyFeature) {
-			match['roomType.keyFeatures'] = {
-				$regex: searchKeyFeature,
-				$options: 'i',
-			};
+			match.$or = [
+				{ 'roomType.keyFeatures': { $regex: searchKeyFeature, $options: 'i' } },
+				{ 'roomType.description': { $regex: searchKeyFeature, $options: 'i' } },
+				{ 'roomType.amenities': { $regex: searchKeyFeature, $options: 'i' } },
+			];
 		}
 		if (Object.keys(match).length > 0) {
 			pipeline.push({ $match: match });
