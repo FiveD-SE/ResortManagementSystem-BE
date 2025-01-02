@@ -437,6 +437,7 @@ export class RoomService {
 		limit = 10,
 		checkinDate?: Date,
 		checkoutDate?: Date,
+		roomTypeId?: string,
 	): Promise<PaginateData<Room>> {
 		const skip = (page - 1) * limit;
 
@@ -537,6 +538,14 @@ export class RoomService {
 			},
 		];
 
+		if (roomTypeId) {
+			pipeline.unshift({
+				$match: {
+					roomTypeId: roomTypeId,
+				},
+			});
+		}
+
 		const match: any = {};
 		if (amenities && amenities.length > 0) {
 			match['roomType.amenities'] = { $all: amenities };
@@ -560,6 +569,7 @@ export class RoomService {
 				{ 'roomType.amenities': { $regex: searchKeyFeature, $options: 'i' } },
 			];
 		}
+
 		if (Object.keys(match).length > 0) {
 			pipeline.push({ $match: match });
 		}

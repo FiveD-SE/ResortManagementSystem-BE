@@ -148,6 +148,12 @@ export class RoomController {
 		type: Date,
 		description: 'Check-out date',
 	})
+	@ApiQuery({
+		name: 'roomTypeId',
+		required: false,
+		type: String,
+		description: 'Room Type ID',
+	})
 	async filterRoomsByRoomTypeFields(
 		@Query('amenities') amenitiesRaw?: string | string[],
 		@Query('guestAmount') guestAmountRaw?: string,
@@ -161,6 +167,7 @@ export class RoomController {
 		@Query('limit') limit = 10,
 		@Query('checkinDate') checkinDate?: string,
 		@Query('checkoutDate') checkoutDate?: string,
+		@Query('roomTypeId') roomTypeId?: string,
 	): Promise<PaginateData<Room>> {
 		const guestAmount = guestAmountRaw
 			? parseInt(guestAmountRaw, 10)
@@ -193,6 +200,7 @@ export class RoomController {
 			limit,
 			checkin,
 			checkout,
+			roomTypeId,
 		);
 	}
 
