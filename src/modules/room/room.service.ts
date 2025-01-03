@@ -715,7 +715,9 @@ export class RoomService {
 
 		const match: any = {};
 		if (amenities && amenities.length > 0) {
-			match['roomType.amenities'] = { $all: amenities };
+			match['roomType.amenities'] = {
+				$all: amenities.map((amenity) => new RegExp(`^${amenity}$`, 'i')),
+			};
 		}
 		if (guestAmount !== undefined) {
 			match['roomType.guestAmount'] = { $gte: guestAmount };
