@@ -73,6 +73,19 @@ export class RoomService {
 			);
 		}
 
+		const basePrice = roomType.basePrice;
+		const minPrice = basePrice * 0.5;
+		const maxPrice = basePrice * 1.5;
+
+		if (
+			createRoomDto.pricePerNight < minPrice ||
+			createRoomDto.pricePerNight > maxPrice
+		) {
+			throw new BadRequestException(
+				`Price per night must be within 50% of the base price (${minPrice} - ${maxPrice})`,
+			);
+		}
+
 		const imageUrls = await Promise.all(
 			files.map((file) => this.imgurService.uploadImage(file)),
 		);
