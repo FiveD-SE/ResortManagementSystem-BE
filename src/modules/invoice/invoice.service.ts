@@ -60,7 +60,7 @@ export class InvoiceService {
 
 		const paymentLinkParams = {
 			orderCode: newInvoice.orderCode,
-			amount: newInvoice.amount,
+			amount: newInvoice.amount * 25000,
 			description: newInvoice.description,
 			returnUrl: newInvoice.returnUrl,
 			cancelUrl: newInvoice.cancelUrl,

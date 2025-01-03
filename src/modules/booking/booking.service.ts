@@ -99,7 +99,7 @@ export class BookingService {
 			customer.firstName,
 			items.map((item) => ({
 				name: item.name,
-				price: item.price * item.quantity,
+				price: item.price,
 				quantity: item.quantity,
 			})),
 			invoice.checkoutUrl,
@@ -362,7 +362,7 @@ export class BookingService {
 
 		const createInvoiceDto: CreateInvoiceDto = {
 			userId: booking.customerId.toString(),
-			amount: remainingAmount,
+			amount: remainingAmount === 0 ? 1 : remainingAmount,
 			description:
 				booking.paymentMethod === 'Transfer'
 					? 'Remaining payment'
@@ -503,15 +503,12 @@ export class BookingService {
 
 		const filterConditions: any = { customerId: userId };
 
-		const currentDate = new Date();
-
 		if (filter === 'upcoming') {
-			filterConditions.checkinDate = { $gte: currentDate };
+			filterConditions.status = BookingStatus.Pending;
 		} else if (filter === 'staying') {
-			filterConditions.checkinDate = { $lte: currentDate };
-			filterConditions.checkoutDate = { $gte: currentDate };
+			filterConditions.status = BookingStatus.CheckedIn;
 		} else if (filter === 'past') {
-			filterConditions.checkoutDate = { $lt: currentDate };
+			filterConditions.status = BookingStatus.CheckedOut;
 		}
 
 		const [count, bookings] = await Promise.all([

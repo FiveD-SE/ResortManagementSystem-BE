@@ -4,7 +4,7 @@ import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { EmailDataInterface } from './interfaces/emailData.interface';
-import puppeteer from 'puppeteer';
+import * as pdf from 'html-pdf';
 
 @Injectable()
 export class EmailService {
@@ -89,7 +89,7 @@ export class EmailService {
                     ${item.name}
                 </td>
                 <td align="right" style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 20%; text-align: right; font-size: 16px;">
-                    $${item.price.toFixed(2)}
+                    $${item.price * item.quantity}
                 </td>
             </tr>
         `,
@@ -129,9 +129,6 @@ export class EmailService {
 	}
 
 	private async generateInvoicePDF(invoiceData: any): Promise<string> {
-		const browser = await puppeteer.launch();
-		const page = await browser.newPage();
-
 		const templatePath = path.join(__dirname, `../../templates/invoice.html`);
 		const templateHtml = fs.readFileSync(templatePath, 'utf8');
 
@@ -140,36 +137,54 @@ export class EmailService {
 			.replace('{{ invoiceDate }}', invoiceData.invoiceDate)
 			.replace('{{ customerName }}', invoiceData.customer.name)
 			.replace('{{ customerEmail }}', invoiceData.customer.email)
-			.replace('{{ totalAmount }}', invoiceData.totalAmount)
+			.replace('{{ totalAmount }}', invoiceData.totalAmount.toString())
 			.replace(
 				'{{ items }}',
 				(invoiceData.items || [])
 					.map(
 						(item, index) => `
-                        <tr>
-                            <td class="border-b py-3 pl-3">${index + 1}.</td>
-                            <td class="border-b py-3 pl-2">${item.name}</td>
-                            <td class="border-b py-3 pl-2 text-right">$${item.price}</td>
-                            <td class="border-b py-3 pl-2">${item.quantity}</td>
-														<td class="border-b py-3 pl-2 text-right">$${(item.price * item.quantity).toFixed(2)}</td>
-                        </tr>
-                    `,
+            <tr>
+              <td class="border-b py-3 pl-3">${index + 1}.</td>
+              <td class="border-b py-3 pl-2">${item.name}</td>
+              <td class="border-b py-3 pl-2 text-right">$${item.price}</td>
+              <td class="border-b py-3 pl-2">${item.quantity}</td>
+              <td class="border-b py-3 pl-2 text-right">$${(item.price * item.quantity).toFixed(2)}</td>
+            </tr>
+          `,
 					)
 					.join('') || '',
 			);
 
-		await page.setContent(compiledHtml);
-
-		const pdfBuffer = await page.pdf({
-			format: 'A4',
-			printBackground: true,
-		});
+		const options: pdf.CreateOptions = {
+			format: 'A4' as const,
+			border: {
+				top: '20px',
+				right: '20px',
+				bottom: '20px',
+				left: '20px',
+			},
+			footer: {
+				height: '20mm',
+				contents: {
+					default:
+						'<div style="text-align: center; font-size: 12px;">Page {{page}} of {{pages}}</div>',
+				},
+			},
+			height: '297mm',
+			width: '210mm',
+			zoomFactor: '1',
+		};
 
 		const pdfPath = path.join(__dirname, 'invoice.pdf');
-		fs.writeFileSync(pdfPath, pdfBuffer);
 
-		await browser.close();
-
-		return pdfPath;
+		return new Promise((resolve, reject) => {
+			pdf.create(compiledHtml, options).toFile(pdfPath, (err, res) => {
+				if (err) {
+					reject(err);
+					return;
+				}
+				resolve(pdfPath);
+			});
+		});
 	}
 }
