@@ -74,4 +74,14 @@ export class RoomDetailDTO {
 		},
 	})
 	occupiedDates: { checkinDate: Date; checkoutDate: Date }[];
+
+	@ApiProperty({
+		description: 'Next available date for booking',
+		type: 'string',
+		format: 'date-time',
+	})
+	nextAvailableWeek: {
+		checkinDate: Date;
+		checkoutDate: Date;
+	};
 }
