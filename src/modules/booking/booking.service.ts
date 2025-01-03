@@ -114,6 +114,24 @@ export class BookingService {
 			);
 		}
 
+		const overlappingBookings = await this.bookingModel
+			.find({
+				roomId,
+				$or: [
+					{
+						checkinDate: { $lt: dto.checkoutDate },
+						checkoutDate: { $gt: dto.checkinDate },
+					},
+				],
+			})
+			.exec();
+
+		if (overlappingBookings.length > 0) {
+			throw new BadRequestException(
+				'The room is not available for the selected dates',
+			);
+		}
+
 		const totalNight =
 			(dto.checkoutDate.getTime() - dto.checkinDate.getTime()) /
 			(1000 * 60 * 60 * 24);
