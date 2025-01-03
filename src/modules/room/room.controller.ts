@@ -10,6 +10,7 @@ import {
 	UploadedFiles,
 	UseGuards,
 	Query,
+	Res,
 } from '@nestjs/common';
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
@@ -26,6 +27,7 @@ import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Public } from '@/decorators/auth.decorator';
+import { Response } from 'express';
 
 @Controller('rooms')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -202,6 +204,13 @@ export class RoomController {
 			checkout,
 			roomTypeId,
 		);
+	}
+
+	@Get('export-rooms-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({ summary: 'Export rooms to Excel' })
+	async exportRoomsToExcel(@Res() res: Response) {
+		return this.roomService.exportRoomsToExcel(res);
 	}
 
 	@Get(':id')

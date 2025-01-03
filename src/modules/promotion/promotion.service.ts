@@ -12,6 +12,8 @@ import {
 } from './entities/userPromotion.entity';
 import { CreatePromotionRequestDto } from './dto/createPromotion.request.dto';
 import { PaginateParams, PaginateData, SortOrder } from '@/types/common.type';
+import * as ExcelJS from 'exceljs';
+import { Response } from 'express';
 
 @Injectable()
 export class PromotionService {
@@ -158,5 +160,45 @@ export class PromotionService {
 			{},
 			{ $pull: { promotions: { promotionId } } },
 		);
+	}
+
+	async exportPromotionsToExcel(res: Response): Promise<void> {
+		const promotions = await this.promotionModel.find().exec();
+
+		const workbook = new ExcelJS.Workbook();
+		const worksheet = workbook.addWorksheet('Promotions');
+
+		worksheet.columns = [
+			{ header: 'ID', key: 'id', width: 30 },
+			{ header: 'Promotion Name', key: 'promotionName', width: 30 },
+			{ header: 'Description', key: 'description', width: 30 },
+			{ header: 'Amount', key: 'amount', width: 20 },
+			{ header: 'Discount', key: 'discount', width: 20 },
+			{ header: 'Start Date', key: 'startDate', width: 20 },
+			{ header: 'End Date', key: 'endDate', width: 20 },
+		];
+
+		promotions.forEach((promotion) => {
+			worksheet.addRow({
+				id: promotion.id,
+				promotionName: promotion.promotionName,
+				description: promotion.description,
+				amount: promotion.amount,
+				discount: promotion.discount,
+				startDate: promotion.startDate,
+				endDate: promotion.endDate,
+			});
+		});
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader(
+			'Content-Disposition',
+			'attachment; filename=promotions.xlsx',
+		);
+		await workbook.xlsx.write(res);
+		res.end();
 	}
 }
