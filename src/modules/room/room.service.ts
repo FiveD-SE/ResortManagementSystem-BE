@@ -741,6 +741,12 @@ export class RoomService {
 			pipeline.push({ $match: match });
 		}
 
+		pipeline.push({
+			$match: {
+				status: { $nin: ['Under Maintenance', 'Occupied'] },
+			},
+		});
+
 		if (sortBy) {
 			const sortStage: Record<string, 1 | -1> = {};
 			sortStage[sortBy] = sortOrder === 'asc' ? 1 : -1;

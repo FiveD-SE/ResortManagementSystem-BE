@@ -104,28 +104,28 @@ export class EmailService {
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toDateString(),
 		});
 
-		const pdfPath = await this.generateInvoicePDF({
-			invoiceNumber: orderCode,
-			invoiceDate: new Date().toDateString(),
-			customer: { name, email },
-			items,
-			totalAmount,
-		});
+		// const pdfPath = await this.generateInvoicePDF({
+		// 	invoiceNumber: orderCode,
+		// 	invoiceDate: new Date().toDateString(),
+		// 	customer: { name, email },
+		// 	items,
+		// 	totalAmount,
+		// });
 
 		await this.sendEmail({
 			to: email,
 			subject: 'Your Invoice',
 			html,
-			attachments: [
-				{
-					filename: 'invoice.pdf',
-					path: pdfPath,
-					contentType: 'application/pdf',
-				},
-			],
+			// attachments: [
+			// 	{
+			// 		filename: 'invoice.pdf',
+			// 		path: pdfPath,
+			// 		contentType: 'application/pdf',
+			// 	},
+			// ],
 		});
 
-		fs.unlinkSync(pdfPath);
+		// fs.unlinkSync(pdfPath);
 	}
 
 	private async generateInvoicePDF(invoiceData: any): Promise<string> {
