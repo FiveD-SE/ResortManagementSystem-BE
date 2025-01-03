@@ -67,6 +67,8 @@ export class BookingService {
 			})),
 		];
 
+		console.log('items', items);
+
 		const customer = booking.customerId as unknown as User;
 
 		const createInvoiceDto: CreateInvoiceDto = {
@@ -93,9 +95,12 @@ export class BookingService {
 			customer.firstName,
 			items.map((item) => ({
 				name: item.name,
-				amount: item.price * item.quantity,
+				price: item.price * item.quantity,
+				quantity: item.quantity,
 			})),
 			invoice.checkoutUrl,
+			invoice.orderCode.toString(),
+			booking.totalAmount,
 		);
 
 		return invoice;
@@ -384,9 +389,12 @@ export class BookingService {
 			customer.firstName,
 			items.map((item) => ({
 				name: item.name,
-				amount: item.price * item.quantity,
+				price: item.price * item.quantity,
+				quantity: item.quantity,
 			})),
 			invoice.checkoutUrl,
+			invoice.orderCode.toString(),
+			remainingAmount === 0 ? 10000 : remainingAmount,
 		);
 
 		booking.status = BookingStatus.CheckedOut;
