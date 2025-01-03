@@ -28,4 +28,8 @@ export class CreateUserRequestDTO {
 	@IsOptional()
 	@IsString()
 	serviceTypeId?: string;
+
+	@IsOptional()
+	@IsString()
+	phoneNumber?: string;
 }
