@@ -57,4 +57,13 @@ export class UpdateUserRequestDTO {
 	@IsOptional()
 	@IsString()
 	serviceTypeId: string;
+
+	@ApiProperty({
+		description: 'Phone number of the user',
+		example: '1234567890',
+		required: false,
+	})
+	@IsOptional()
+	@IsString()
+	phoneNumber: string;
 }
