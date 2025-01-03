@@ -31,6 +31,77 @@ export class RoomService {
 		private readonly userService: UserService,
 	) {}
 
+	private calculateNextAvailableWeek(bookings: Booking[]): {
+		checkinDate: Date;
+		checkoutDate: Date;
+	} {
+		// Sort bookings by checkin date
+		const sortedBookings = [...bookings].sort(
+			(a, b) =>
+				new Date(a.checkinDate).getTime() - new Date(b.checkinDate).getTime(),
+		);
+
+		const today = new Date();
+		const availableStart = new Date(today);
+		availableStart.setDate(availableStart.getDate() + 1); // Start from tomorrow
+
+		// Function to check if a date overlaps with any booking's checkin or checkout date
+		const isDateOverlapping = (date: Date, booking: Booking) => {
+			const bookingCheckin = new Date(booking.checkinDate);
+			const bookingCheckout = new Date(booking.checkoutDate);
+
+			// Reset time parts to compare only dates
+			date.setHours(0, 0, 0, 0);
+			bookingCheckin.setHours(0, 0, 0, 0);
+			bookingCheckout.setHours(0, 0, 0, 0);
+
+			return (
+				date.getTime() === bookingCheckin.getTime() ||
+				date.getTime() === bookingCheckout.getTime()
+			);
+		};
+
+		// Function to check if a week period overlaps with a booking
+		const hasOverlap = (start: Date, end: Date, booking: Booking) => {
+			const bookingStart = new Date(booking.checkinDate);
+			const bookingEnd = new Date(booking.checkoutDate);
+
+			// Check if either start or end date overlaps with booking dates
+			if (
+				isDateOverlapping(new Date(start), booking) ||
+				isDateOverlapping(new Date(end), booking)
+			) {
+				return true;
+			}
+
+			// Check if the week period overlaps with the booking period
+			return start <= bookingEnd && end >= bookingStart;
+		};
+
+		let found = false;
+		while (!found) {
+			const weekEnd = new Date(availableStart);
+			weekEnd.setDate(weekEnd.getDate() + 7);
+
+			// Check if this week overlaps with any booking
+			const hasBookingOverlap = sortedBookings.some((booking) =>
+				hasOverlap(availableStart, weekEnd, booking),
+			);
+
+			if (!hasBookingOverlap) {
+				found = true;
+			} else {
+				// Move to the next day
+				availableStart.setDate(availableStart.getDate() + 1);
+			}
+		}
+
+		const availableEnd = new Date(availableStart);
+		availableEnd.setDate(availableEnd.getDate() + 7);
+
+		return { checkinDate: availableStart, checkoutDate: availableEnd };
+	}
+
 	/**
 	 * Maps a Room document to RoomDTO.
 	 * @param room The Room document.
@@ -316,7 +387,7 @@ export class RoomService {
 				const user = await this.userService.getUser(rating.userId.toString());
 				return {
 					...rating.toObject(),
-					fullName: user?.firstName + ' ' + user?.lastName || 'Ẩn danh',
+					fullName: user?.firstName + ' ' + user?.lastName || 'Unknown',
 				};
 			}),
 		);
@@ -397,6 +468,7 @@ export class RoomService {
 			checkinDate: booking.checkinDate,
 			checkoutDate: booking.checkoutDate,
 		}));
+		const nextAvailableWeek = this.calculateNextAvailableWeek(bookings);
 
 		return {
 			room,
@@ -406,6 +478,7 @@ export class RoomService {
 			ratingCount: totalRatings,
 			ratingCounts,
 			occupiedDates,
+			nextAvailableWeek,
 		};
 	}
 
@@ -508,25 +581,104 @@ export class RoomService {
 					nextAvailableWeek: {
 						$let: {
 							vars: {
-								nextWeekStart: {
-									$cond: {
-										if: { $eq: [{ $size: '$bookings' }, 0] },
-										then: new Date(),
-										else: {
-											$add: [
-												{
-													$max: '$bookings.checkoutDate',
-												},
-												1 * 24 * 60 * 60 * 1000,
-											],
-										},
+								today: new Date(),
+								sortedBookings: {
+									$sortArray: {
+										input: '$bookings',
+										sortBy: { checkinDate: 1 },
 									},
 								},
 							},
 							in: {
-								start: '$$nextWeekStart',
-								end: {
-									$add: ['$$nextWeekStart', 7 * 24 * 60 * 60 * 1000],
+								$reduce: {
+									input: '$$sortedBookings',
+									initialValue: {
+										checkinDate: {
+											$dateAdd: {
+												startDate: '$$today',
+												unit: 'day',
+												amount: 1,
+											},
+										},
+										checkoutDate: {
+											$dateAdd: {
+												startDate: {
+													$dateAdd: {
+														startDate: '$$today',
+														unit: 'day',
+														amount: 1,
+													},
+												},
+												unit: 'day',
+												amount: 7,
+											},
+										},
+									},
+									in: {
+										$cond: {
+											if: {
+												$or: [
+													{
+														$and: [
+															{
+																$lte: [
+																	'$$this.checkinDate',
+																	'$$value.checkoutDate',
+																],
+															},
+															{
+																$gte: [
+																	'$$this.checkoutDate',
+																	'$$value.checkinDate',
+																],
+															},
+														],
+													},
+													{
+														$eq: [
+															{ $dayOfYear: '$$this.checkinDate' },
+															{ $dayOfYear: '$$value.checkinDate' },
+														],
+													},
+													{
+														$eq: [
+															{ $dayOfYear: '$$this.checkinDate' },
+															{ $dayOfYear: '$$value.checkoutDate' },
+														],
+													},
+													{
+														$eq: [
+															{ $dayOfYear: '$$this.checkoutDate' },
+															{ $dayOfYear: '$$value.checkinDate' },
+														],
+													},
+													{
+														$eq: [
+															{ $dayOfYear: '$$this.checkoutDate' },
+															{ $dayOfYear: '$$value.checkoutDate' },
+														],
+													},
+												],
+											},
+											then: {
+												checkinDate: {
+													$dateAdd: {
+														startDate: '$$this.checkoutDate',
+														unit: 'day',
+														amount: 1,
+													},
+												},
+												checkoutDate: {
+													$dateAdd: {
+														startDate: '$$this.checkoutDate',
+														unit: 'day',
+														amount: 8,
+													},
+												},
+											},
+											else: '$$value',
+										},
+									},
 								},
 							},
 						},
