@@ -4,6 +4,7 @@ import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
 import { EmailDataInterface } from './interfaces/emailData.interface';
+import puppeteer from 'puppeteer';
 
 @Injectable()
 export class EmailService {
@@ -75,37 +76,100 @@ export class EmailService {
 	async sendInvoiceEmail(
 		email: string,
 		name: string,
-		items: { name: string; amount: number }[],
+		items: { name: string; quantity: number; price: number }[],
 		paymentUrl: string,
+		orderCode: string,
+		totalAmount: number,
 	): Promise<void> {
-		const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 		const itemsHtml = items
 			.map(
 				(item) => `
-                <tr>
-                    <td style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 80%; padding-top: 10px; padding-bottom: 10px; font-size: 16px;">
-                        ${item.name}
-                    </td>
-                    <td align="right" style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 20%; text-align: right; font-size: 16px;">
-                        $${item.amount.toFixed(2)}
-                    </td>
-                </tr>
-            `,
+            <tr>
+                <td style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 80%; padding-top: 10px; padding-bottom: 10px; font-size: 16px;">
+                    ${item.name}
+                </td>
+                <td align="right" style="font-family: 'Montserrat', sans-serif; mso-line-height-rule: exactly; width: 20%; text-align: right; font-size: 16px;">
+                    $${item.price.toFixed(2)}
+                </td>
+            </tr>
+        `,
 			)
 			.join('');
 
 		const html = this.convertToHTML('mail-invoice', {
 			name,
 			items: itemsHtml,
-			totalAmount: `$${totalAmount.toFixed(2)}`,
+			totalAmount: totalAmount.toFixed(2).toString(),
 			paymentUrl,
 			dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toDateString(),
+		});
+
+		const pdfPath = await this.generateInvoicePDF({
+			invoiceNumber: orderCode,
+			invoiceDate: new Date().toDateString(),
+			customer: { name, email },
+			items,
+			totalAmount,
 		});
 
 		await this.sendEmail({
 			to: email,
 			subject: 'Your Invoice',
 			html,
+			attachments: [
+				{
+					filename: 'invoice.pdf',
+					path: pdfPath,
+					contentType: 'application/pdf',
+				},
+			],
 		});
+
+		fs.unlinkSync(pdfPath);
+	}
+
+	private async generateInvoicePDF(invoiceData: any): Promise<string> {
+		const browser = await puppeteer.launch();
+		const page = await browser.newPage();
+
+		const templatePath = path.join(__dirname, `../../templates/invoice.html`);
+		const templateHtml = fs.readFileSync(templatePath, 'utf8');
+
+		const compiledHtml = templateHtml
+			.replace('{{ invoiceNumber }}', invoiceData.invoiceNumber)
+			.replace('{{ invoiceDate }}', invoiceData.invoiceDate)
+			.replace('{{ customerName }}', invoiceData.customer.name)
+			.replace('{{ customerEmail }}', invoiceData.customer.email)
+			.replace('{{ totalAmount }}', invoiceData.totalAmount)
+			.replace(
+				'{{ items }}',
+				(invoiceData.items || [])
+					.map(
+						(item, index) => `
+                        <tr>
+                            <td class="border-b py-3 pl-3">${index + 1}.</td>
+                            <td class="border-b py-3 pl-2">${item.name}</td>
+                            <td class="border-b py-3 pl-2 text-right">$${item.price}</td>
+                            <td class="border-b py-3 pl-2">${item.quantity}</td>
+														<td class="border-b py-3 pl-2 text-right">$${(item.price * item.quantity).toFixed(2)}</td>
+                        </tr>
+                    `,
+					)
+					.join('') || '',
+			);
+
+		await page.setContent(compiledHtml);
+
+		const pdfBuffer = await page.pdf({
+			format: 'A4',
+			printBackground: true,
+		});
+
+		const pdfPath = path.join(__dirname, 'invoice.pdf');
+		fs.writeFileSync(pdfPath, pdfBuffer);
+
+		await browser.close();
+
+		return pdfPath;
 	}
 }
