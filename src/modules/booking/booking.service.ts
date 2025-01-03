@@ -432,6 +432,46 @@ export class BookingService {
 		return booking;
 	}
 
+	async addServicesToBooking(
+		bookingId: string,
+		serviceIds: string[],
+	): Promise<Booking> {
+		const booking = await this.bookingModel.findById(bookingId).exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		const services = await this.serviceService.findByIds(serviceIds);
+		if (services.length !== serviceIds.length) {
+			throw new NotFoundException('One or more services not found');
+		}
+
+		for (const service of services) {
+			const existingService = booking.services.find(
+				(s) => s.serviceId.toString() === service.id,
+			);
+
+			if (existingService) {
+				existingService.quantity += 1;
+			} else {
+				booking.services.push({
+					serviceId: new Types.ObjectId(service.id),
+					status: ServiceStatus.Pending,
+					price: service.price,
+					quantity: 1,
+					name: service.serviceName,
+				});
+			}
+
+			booking.totalAmount += service.price;
+		}
+
+		await booking.save();
+
+		return booking;
+	}
+
 	async getBookingsByUserId(
 		userId: string,
 		query: PaginateParams,

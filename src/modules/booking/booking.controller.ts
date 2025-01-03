@@ -151,6 +151,26 @@ export class BookingController {
 		return this.bookingService.addServiceToBooking(bookingId, serviceId);
 	}
 
+	@Post(':bookingId/services')
+	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
+	@ApiOperation({ summary: 'Add multiple services to a booking' })
+	async addServicesToBooking(
+		@Param('bookingId') bookingId: string,
+		@Body() serviceIds: string[],
+		@Req() req: RequestWithUser,
+	): Promise<Booking> {
+		const userId = req.user._id.toString();
+		const booking = await this.bookingService.findBookingById(bookingId);
+
+		if (booking.customerId._id.toString() !== userId) {
+			throw new BadRequestException(
+				'You are not authorized to add services to this booking',
+			);
+		}
+
+		return this.bookingService.addServicesToBooking(bookingId, serviceIds);
+	}
+
 	@Get('user/:userId')
 	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
 	@ApiOperation({ summary: 'Get bookings by user ID with optional filters' })
