@@ -34,6 +34,9 @@ export class User extends BaseEntity {
 	@Prop({ required: true })
 	lastName: string;
 
+	@Prop({ required: false })
+	phoneNumber: string;
+
 	@Prop({ default: UserRole.User, enum: UserRole, lowercase: true })
 	role: string;
 

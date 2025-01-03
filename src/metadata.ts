@@ -77,6 +77,7 @@ export default async () => {
 							password: { required: true, type: () => String },
 							firstName: { required: true, type: () => String },
 							lastName: { required: true, type: () => String },
+							phoneNumber: { required: false, type: () => String },
 						},
 					},
 				],
