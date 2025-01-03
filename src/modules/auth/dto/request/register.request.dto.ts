@@ -23,4 +23,6 @@ export class RegisterRequestDTO {
 	@IsNotEmpty()
 	@IsString()
 	lastName: string;
+
+	phoneNumber: string;
 }
