@@ -529,6 +529,10 @@ export class BookingService {
 				continue;
 			}
 
+			if (booking.status !== BookingStatus.CheckedIn) {
+				continue;
+			}
+
 			for (const service of booking.services as any[]) {
 				const fullService = await this.serviceService.findOne(
 					service.serviceId,
@@ -579,6 +583,10 @@ export class BookingService {
 
 		for (const booking of bookings) {
 			if (!booking.services || booking.services.length === 0) {
+				continue;
+			}
+
+			if (booking.status !== BookingStatus.CheckedIn) {
 				continue;
 			}
 
@@ -682,6 +690,10 @@ export class BookingService {
 				continue;
 			}
 
+			if (booking.status !== BookingStatus.CheckedIn) {
+				continue;
+			}
+
 			const room = await this.roomService.findOne(booking.roomId.toString());
 
 			for (const service of booking.services as any[]) {
@@ -764,6 +776,10 @@ export class BookingService {
 			throw new NotFoundException(
 				`Service with ID ${bookingServiceId} not found in any booking`,
 			);
+		}
+
+		if (booking.status !== BookingStatus.CheckedIn) {
+			throw new BadRequestException('Booking must be in checked in status');
 		}
 
 		const service = booking.services.find(
