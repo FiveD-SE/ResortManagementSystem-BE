@@ -12,6 +12,11 @@ import { ServiceType, ServiceTypeSchema } from './entities/serviceType.entity';
 	],
 	providers: [ServiceTypeService],
 	controllers: [ServiceTypeController],
-	exports: [ServiceTypeService],
+	exports: [
+		ServiceTypeService,
+		MongooseModule.forFeature([
+			{ name: ServiceType.name, schema: ServiceTypeSchema },
+		]),
+	],
 })
 export class ServiceTypeModule {}

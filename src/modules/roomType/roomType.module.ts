@@ -12,5 +12,6 @@ import { RoomType, RoomTypeSchema } from './entities/roomType.entity';
 	],
 	controllers: [RoomTypeController],
 	providers: [RoomTypeService],
+	exports: [RoomTypeService],
 })
 export class RoomTypeModule {}

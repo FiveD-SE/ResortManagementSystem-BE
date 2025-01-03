@@ -9,6 +9,7 @@ import {
 	Req,
 	Query,
 	BadRequestException,
+	Res,
 } from '@nestjs/common';
 import { PromotionService } from './promotion.service';
 import { CreatePromotionRequestDto } from './dto/createPromotion.request.dto';
@@ -21,6 +22,7 @@ import { RequestWithUser } from '@/types/request.type';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { Response } from 'express';
 
 @Controller('promotions')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -71,6 +73,15 @@ export class PromotionController {
 		}
 
 		return this.promotionService.getAllPromotions(user.role, user.id, query);
+	}
+
+	@Get('export-promotion-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export promotions to Excel',
+	})
+	async exportPromotionsToExcel(@Res() res: Response) {
+		return this.promotionService.exportPromotionsToExcel(res);
 	}
 
 	@Get(':id')

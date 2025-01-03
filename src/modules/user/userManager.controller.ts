@@ -9,6 +9,7 @@ import {
 	Param,
 	Patch,
 	Query,
+	Res,
 	UseInterceptors,
 } from '@nestjs/common';
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
@@ -25,6 +26,7 @@ import {
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Roles } from '@/decorators/roles.decorator';
+import { Response } from 'express';
 @UseInterceptors(MongooseClassSerializerInterceptor(User))
 @Controller('admin/users')
 @ApiTags('User')
@@ -54,6 +56,24 @@ export class UserManagerController {
 		service_staff: number;
 	}> {
 		return this.userManagerService.getStaffCount();
+	}
+
+	@Get('export-user-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export users to Excel',
+	})
+	async exportUsersToExcel(@Res() res: Response) {
+		return this.userManagerService.exportUsersToExcel(res);
+	}
+
+	@Get('export-staff-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export users to Excel',
+	})
+	async exportStaffsToExcel(@Res() res: Response) {
+		return this.userManagerService.exportStaffToExcel(res);
 	}
 
 	@Get(':role')
