@@ -8,6 +8,7 @@ import {
 	UseGuards,
 	Req,
 	BadRequestException,
+	Res,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { InvoiceService } from './invoice.service';
@@ -20,6 +21,8 @@ import { Invoice } from './entities/invoice.entity';
 import { Public } from '@/decorators/auth.decorator';
 import { RequestWithUser } from '@/types/request.type';
 import { BookingService } from '../booking/booking.service';
+import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
 
 @ApiTags('Invoices')
 @Controller('invoices')
@@ -28,6 +31,7 @@ export class InvoiceController {
 	constructor(
 		private readonly invoiceService: InvoiceService,
 		private readonly bookingService: BookingService,
+		private readonly conf: ConfigService,
 	) {}
 
 	@Post()
@@ -55,11 +59,20 @@ export class InvoiceController {
 	async updateInvoiceStatus(
 		@Query('orderCode') orderCode: number,
 		@Query('status') status: string,
-	): Promise<Invoice> {
-		return this.invoiceService.updateInvoiceStatusByOrderCode(
+		@Res() res: Response,
+	): Promise<void> {
+		const invoice = await this.invoiceService.updateInvoiceStatusByOrderCode(
 			orderCode,
 			status,
 		);
+
+		if (!invoice) {
+			throw new BadRequestException('Invoice not found');
+		}
+
+		const frontendUrl =
+			this.conf.get('FRONTEND_URL') + '/trips/detail/' + invoice.bookingId;
+		res.redirect(frontendUrl);
 	}
 
 	@Get(':id')
