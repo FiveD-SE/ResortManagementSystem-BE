@@ -37,7 +37,7 @@ import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.
 				DATABASE_PASSWORD: Joi.string().required(),
 				DATABASE_HOST: Joi.string().required(),
 				IMGUR_CLIENT_ID: Joi.string().required(),
-				JWT_ACCESS_TOKEN_EXPIRATION_TIME: Joi.number().required().min(1000),
+				JWT_ACCESS_TOKEN_EXPIRATION_TIME: Joi.number().required(),
 				JWT_REFRESH_TOKEN_EXPIRATION_TIME: Joi.number().required().min(1000),
 				EMAIL_HOST: Joi.string().required(),
 				EMAIL_PORT: Joi.number().required(),
