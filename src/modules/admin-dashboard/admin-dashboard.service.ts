@@ -12,6 +12,14 @@ import {
 import { Service, ServiceDocument } from '../service/entities/service.entity';
 import * as ExcelJS from 'exceljs';
 import { Response } from 'express';
+import {
+	ServiceType,
+	ServiceTypeDocument,
+} from '../serviceType/entities/serviceType.entity';
+import {
+	Promotion,
+	PromotionDocument,
+} from '../promotion/entities/promotion.entity';
 
 @Injectable()
 export class AdminDashboardService {
@@ -30,6 +38,10 @@ export class AdminDashboardService {
 		private readonly roomTypeModel: Model<RoomTypeDocument>,
 		@InjectModel(Service.name)
 		private readonly serviceModel: Model<ServiceDocument>,
+		@InjectModel(ServiceType.name)
+		private readonly serviceTypeModel: Model<ServiceTypeDocument>,
+		@InjectModel(Promotion.name)
+		private readonly promotionModel: Model<PromotionDocument>,
 	) {}
 
 	private calculateGrowth(current: number, previous: number): number {
@@ -611,5 +623,382 @@ export class AdminDashboardService {
 			this.logger.error('Error during aggregation:', error.message);
 			throw new Error('Failed to get service count by service type');
 		}
+	}
+
+	async exportBookingToExcel(res: Response): Promise<void> {
+		const bookings = await this.bookingModel.find().exec();
+
+		const workbook = new ExcelJS.Workbook();
+		const worksheet = workbook.addWorksheet('Bookings');
+
+		worksheet.columns = [
+			{ header: 'Booking ID', key: 'id', width: 30 },
+			{ header: 'Room Type', key: 'roomType', width: 30 },
+			{ header: 'Room Number', key: 'roomNumber', width: 30 },
+			{ header: 'Customer Name', key: 'customerName', width: 30 },
+			{ header: 'Customer Phone', key: 'customerPhone', width: 30 },
+			{ header: 'Check-in Date', key: 'checkinDate', width: 30 },
+			{ header: 'Check-out Date', key: 'checkoutDate', width: 30 },
+			{ header: 'Total Amount', key: 'totalAmount', width: 20 },
+			{ header: 'Status', key: 'status', width: 20 },
+			{ header: 'Guests', key: 'guests', width: 20 },
+			{ header: 'Services', key: 'services', width: 40 },
+		];
+
+		await Promise.all(
+			bookings.map(async (booking) => {
+				const customer = await this.userModel
+					.findById(booking.customerId.toString())
+					.exec();
+				const room = await this.roomModel
+					.findById(booking.roomId.toString())
+					.exec();
+				const roomType = await this.roomTypeModel
+					.findById(room.roomTypeId.toString())
+					.exec();
+
+				const guestsInfo = `Adults: ${booking.guests.adults}, Children: ${booking.guests.children}`;
+
+				const serviceNames = booking.services
+					.map((service) => service.name)
+					.join(', ');
+
+				worksheet.addRow({
+					id: booking._id.toString(),
+					roomType: roomType.typeName,
+					roomNumber: room.roomNumber,
+					customerName: customer
+						? `${customer.firstName} ${customer.lastName}`
+						: 'N/A',
+					customerPhone: customer ? customer.phoneNumber : 'N/A',
+					checkinDate: booking.checkinDate
+						? booking.checkinDate.toLocaleString()
+						: 'N/A',
+					checkoutDate: booking.checkoutDate
+						? booking.checkoutDate.toLocaleString()
+						: 'N/A',
+					totalAmount: booking.totalAmount || 0,
+					status: booking.status || 'N/A',
+					guests: guestsInfo,
+					services: serviceNames,
+				});
+			}),
+		);
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader('Content-Disposition', 'attachment; filename=bookings.xlsx');
+
+		await workbook.xlsx.write(res);
+		res.end();
+	}
+
+	async exportPromotionsToExcel(res: Response): Promise<void> {
+		const promotions = await this.promotionModel.find().exec();
+
+		const workbook = new ExcelJS.Workbook();
+		const worksheet = workbook.addWorksheet('Promotions');
+
+		worksheet.columns = [
+			{ header: 'ID', key: 'id', width: 30 },
+			{ header: 'Promotion Name', key: 'promotionName', width: 30 },
+			{ header: 'Description', key: 'description', width: 30 },
+			{ header: 'Amount', key: 'amount', width: 20 },
+			{ header: 'Discount', key: 'discount', width: 20 },
+			{ header: 'Start Date', key: 'startDate', width: 20 },
+			{ header: 'End Date', key: 'endDate', width: 20 },
+		];
+
+		promotions.forEach((promotion) => {
+			worksheet.addRow({
+				id: promotion.id,
+				promotionName: promotion.promotionName,
+				description: promotion.description,
+				amount: promotion.amount,
+				discount: promotion.discount,
+				startDate: promotion.startDate,
+				endDate: promotion.endDate,
+			});
+		});
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader(
+			'Content-Disposition',
+			'attachment; filename=promotions.xlsx',
+		);
+		await workbook.xlsx.write(res);
+		res.end();
+	}
+
+	async exportRoomsToExcel(res: Response): Promise<void> {
+		const rooms = await this.roomModel.find().exec();
+		const roomTypes = await this.roomTypeModel.find().exec();
+
+		const roomsWithImages = rooms.map((room) => ({
+			...room.toObject(),
+			images: room.images.join('\r\n') || 'N/A',
+		}));
+
+		const workbook = new ExcelJS.Workbook();
+
+		const addSheetWithData = (
+			sheetName: string,
+			data: any[],
+			columns: { header: string; key: string; width: number }[],
+			rowFormatter: (item: any) => Record<string, any>,
+		) => {
+			const sheet = workbook.addWorksheet(sheetName);
+			sheet.columns = columns;
+			data.forEach((item) => {
+				sheet.addRow(rowFormatter(item));
+			});
+		};
+
+		addSheetWithData(
+			'Rooms',
+			roomsWithImages,
+			[
+				{ header: 'Room ID', key: 'id', width: 30 },
+				{ header: 'Room Number', key: 'roomNumber', width: 20 },
+				{ header: 'Status', key: 'status', width: 20 },
+				{ header: 'Price Per Night', key: 'pricePerNight', width: 15 },
+				{ header: 'Average Rating', key: 'averageRating', width: 15 },
+				{ header: 'Images', key: 'images', width: 50 },
+			],
+			(room) => ({
+				id: room._id.toString(),
+				roomNumber: room.roomNumber,
+				status: room.status,
+				pricePerNight: room.pricePerNight,
+				averageRating: room.averageRating || 0,
+				images: room.images || 'N/A',
+			}),
+		);
+
+		addSheetWithData(
+			'Room Types',
+			roomTypes,
+			[
+				{ header: 'Room Type ID', key: 'id', width: 30 },
+				{ header: 'Type Name', key: 'typeName', width: 30 },
+				{ header: 'Description', key: 'description', width: 50 },
+				{ header: 'Base Price', key: 'basePrice', width: 15 },
+				{ header: 'Guest Amount', key: 'guestAmount', width: 15 },
+				{ header: 'Bed Amount', key: 'bedAmount', width: 15 },
+				{ header: 'Bedroom Amount', key: 'bedroomAmount', width: 15 },
+				{ header: 'Shared Bath Amount', key: 'sharedBathAmount', width: 20 },
+				{ header: 'Amenities', key: 'amenities', width: 50 },
+				{ header: 'Key Features', key: 'keyFeatures', width: 50 },
+			],
+			(roomType) => ({
+				id: roomType._id.toString(),
+				typeName: roomType.typeName,
+				description: roomType.description || 'N/A',
+				basePrice: roomType.basePrice,
+				guestAmount: roomType.guestAmount,
+				bedAmount: roomType.bedAmount,
+				bedroomAmount: roomType.bedroomAmount,
+				sharedBathAmount: roomType.sharedBathAmount,
+				amenities: roomType.amenities.join(', ') || 'N/A',
+				keyFeatures: roomType.keyFeatures.join(', ') || 'N/A',
+			}),
+		);
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader('Content-Disposition', 'attachment; filename=rooms.xlsx');
+
+		await workbook.xlsx.write(res);
+		res.end();
+	}
+
+	async exportServicesToExcel(res: Response): Promise<void> {
+		const services = await this.serviceModel.find().exec();
+		const serviceTypes = await this.serviceTypeModel.find();
+
+		const serviceTypeMap = serviceTypes.reduce((map, serviceType) => {
+			map[serviceType._id.toString()] = serviceType;
+			return map;
+		}, {});
+
+		const servicesWithTypeNames = services.map((service) => {
+			const serviceType =
+				serviceTypeMap[service.serviceTypeId.toString()] || null;
+			return {
+				...service.toObject(),
+				serviceTypeName: serviceType ? serviceType.typeName : 'N/A',
+			};
+		});
+
+		const workbook = new ExcelJS.Workbook();
+
+		const addSheetWithData = (
+			sheetName: string,
+			data: any[],
+			columns: { header: string; key: string; width: number }[],
+			rowFormatter: (item: any) => Record<string, any>,
+		) => {
+			const sheet = workbook.addWorksheet(sheetName);
+			sheet.columns = columns;
+			data.forEach((item) => {
+				sheet.addRow(rowFormatter(item));
+			});
+		};
+
+		addSheetWithData(
+			'Services',
+			servicesWithTypeNames,
+			[
+				{ header: 'Service ID', key: 'id', width: 30 },
+				{ header: 'Name', key: 'name', width: 25 },
+				{ header: 'Service Type', key: 'serviceTypeName', width: 30 },
+				{ header: 'Description', key: 'description', width: 50 },
+				{ header: 'Price', key: 'price', width: 15 },
+			],
+			(service) => ({
+				id: service._id.toString(),
+				name: service.serviceName,
+				serviceTypeName: service.serviceTypeName || 'N/A',
+				description: service.description || 'N/A',
+				price: service.price || 0,
+			}),
+		);
+
+		addSheetWithData(
+			'Service Types',
+			serviceTypes,
+			[
+				{ header: 'Service Type ID', key: 'id', width: 30 },
+				{ header: 'Name', key: 'name', width: 30 },
+				{ header: 'Description', key: 'description', width: 50 },
+			],
+			(serviceType) => ({
+				id: serviceType._id.toString(),
+				name: serviceType.typeName,
+				description: serviceType.description || 'N/A',
+			}),
+		);
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader('Content-Disposition', 'attachment; filename=services.xlsx');
+		await workbook.xlsx.write(res);
+		res.end();
+	}
+
+	async exportUsersToExcel(res: Response): Promise<void> {
+		const users = await this.userModel.find({ role: 'user' }).exec();
+
+		const workbook = new ExcelJS.Workbook();
+		const worksheet = workbook.addWorksheet('Users');
+
+		worksheet.columns = [
+			{ header: 'User ID', key: 'id', width: 30 },
+			{ header: 'Name', key: 'name', width: 25 },
+			{ header: 'Email', key: 'email', width: 30 },
+			{ header: 'Phone Number', key: 'phone', width: 20 },
+			{ header: 'Status', key: 'status', width: 20 },
+		];
+
+		users.forEach((user) => {
+			worksheet.addRow({
+				id: user._id.toString(),
+				name: user.firstName + ' ' + user.lastName,
+				email: user.email,
+				phone: user.phoneNumber ? user.phoneNumber : 'N/A',
+				status: user.isActive ? 'Active' : 'Inactive',
+			});
+		});
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
+		await workbook.xlsx.write(res);
+		res.end();
+	}
+
+	async exportStaffToExcel(res: Response): Promise<void> {
+		const serviceStaff = await this.userModel
+			.find({ role: 'service_staff' })
+			.exec();
+		const receptionist = await this.userModel
+			.find({ role: 'receptionist' })
+			.exec();
+		const allStaff = [...serviceStaff, ...receptionist];
+
+		const workbook = new ExcelJS.Workbook();
+
+		const allStaffSheet = workbook.addWorksheet('All Staff');
+		allStaffSheet.columns = [
+			{ header: 'Staff ID', key: 'id', width: 30 },
+			{ header: 'Name', key: 'name', width: 25 },
+			{ header: 'Email', key: 'email', width: 30 },
+			{ header: 'Role', key: 'role', width: 20 },
+			{ header: 'Status', key: 'status', width: 20 },
+		];
+		allStaff.forEach((staff) => {
+			allStaffSheet.addRow({
+				id: staff._id.toString(),
+				name: staff.firstName + ' ' + staff.lastName,
+				email: staff.email,
+				role: staff.role === 'receptionist' ? 'Receptionist' : 'Service Staff',
+				status: staff.isActive ? 'Active' : 'Inactive',
+			});
+		});
+
+		const serviceStaffSheet = workbook.addWorksheet('Service Staff');
+		serviceStaffSheet.columns = [
+			{ header: 'Staff ID', key: 'id', width: 30 },
+			{ header: 'Name', key: 'name', width: 25 },
+			{ header: 'Email', key: 'email', width: 30 },
+			{ header: 'Role', key: 'role', width: 20 },
+			{ header: 'Status', key: 'status', width: 20 },
+		];
+		serviceStaff.forEach((staff) => {
+			serviceStaffSheet.addRow({
+				id: staff._id.toString(),
+				name: staff.firstName + ' ' + staff.lastName,
+				email: staff.email,
+				role: 'Service Staff',
+				status: staff.isActive ? 'Active' : 'Inactive',
+			});
+		});
+
+		const receptionistSheet = workbook.addWorksheet('Receptionist');
+		receptionistSheet.columns = [
+			{ header: 'Staff ID', key: 'id', width: 30 },
+			{ header: 'Name', key: 'name', width: 25 },
+			{ header: 'Email', key: 'email', width: 30 },
+			{ header: 'Role', key: 'role', width: 20 },
+			{ header: 'Status', key: 'status', width: 20 },
+		];
+		receptionist.forEach((staff) => {
+			receptionistSheet.addRow({
+				id: staff._id.toString(),
+				name: staff.firstName + ' ' + staff.lastName,
+				email: staff.email,
+				role: 'Receptionist',
+				status: staff.isActive ? 'Active' : 'Inactive',
+			});
+		});
+
+		res.setHeader(
+			'Content-Type',
+			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+		);
+		res.setHeader('Content-Disposition', 'attachment; filename=staff.xlsx');
+		await workbook.xlsx.write(res);
+		res.end();
 	}
 }

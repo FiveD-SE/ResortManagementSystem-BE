@@ -9,7 +9,6 @@ import {
 	Query,
 	Patch,
 	BadRequestException,
-	Res,
 } from '@nestjs/common';
 import { BookingService } from './booking.service';
 import { CreateBookingDTO } from './dto/createBooking.dto';
@@ -24,7 +23,6 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { RequestWithUser } from '@/types/request.type';
 import { BookingServiceDTO } from './dto/bookingService.dto';
-import { Response } from 'express';
 
 @Controller('bookings')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -98,13 +96,6 @@ export class BookingController {
 		checkedOut: number;
 	}> {
 		return this.bookingService.getBookingCountByStatus();
-	}
-
-	@Get('export-booking-excel')
-	@Roles(UserRole.Admin)
-	@ApiOperation({ summary: 'Export bookings to Excel' })
-	async exportBookingsToExcel(@Req() req, @Res() res: Response) {
-		return this.bookingService.exportBookingToExcel(res);
 	}
 
 	@Get(':id')

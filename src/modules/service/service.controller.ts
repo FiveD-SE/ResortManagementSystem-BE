@@ -8,7 +8,6 @@ import {
 	Patch,
 	Post,
 	Query,
-	Res,
 	UseGuards,
 } from '@nestjs/common';
 import { ServiceService } from './service.service';
@@ -21,8 +20,7 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { Response } from 'express';
+import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('services')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -61,15 +59,6 @@ export class ServiceController {
 		}
 
 		return this.serviceService.findAll(query);
-	}
-
-	@Get('export-service-excel')
-	@Roles(UserRole.Admin)
-	@ApiOperation({
-		summary: 'Export services to excel',
-	})
-	async exportServicesToExcel(@Res() res: Response) {
-		return this.serviceService.exportServicesToExcel(res);
 	}
 
 	@Get(':id')

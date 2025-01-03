@@ -28,8 +28,6 @@ import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { BookingServiceDTO } from './dto/bookingService.dto';
 import { User, UserRole } from '../user/entities/user.entity';
-import * as ExcelJS from 'exceljs';
-import { Response } from 'express';
 
 @Injectable()
 export class BookingService {
@@ -849,75 +847,5 @@ export class BookingService {
 
 		await booking.save();
 		return booking;
-	}
-
-	async exportBookingToExcel(res: Response): Promise<void> {
-		const bookings = await this.bookingModel.find().exec();
-
-		const workbook = new ExcelJS.Workbook();
-		const worksheet = workbook.addWorksheet('Bookings');
-
-		worksheet.columns = [
-			{ header: 'Booking ID', key: 'id', width: 30 },
-			{ header: 'Room Type', key: 'roomType', width: 30 },
-			{ header: 'Room Number', key: 'roomNumber', width: 30 },
-			{ header: 'Customer Name', key: 'customerName', width: 30 },
-			{ header: 'Customer Phone', key: 'customerPhone', width: 30 },
-			{ header: 'Check-in Date', key: 'checkinDate', width: 30 },
-			{ header: 'Check-out Date', key: 'checkoutDate', width: 30 },
-			{ header: 'Total Amount', key: 'totalAmount', width: 20 },
-			{ header: 'Status', key: 'status', width: 20 },
-			{ header: 'Guests', key: 'guests', width: 20 },
-			{ header: 'Services', key: 'services', width: 40 },
-		];
-
-		await Promise.all(
-			bookings.map(async (booking) => {
-				const customer = await this.userService.getUser(
-					booking.customerId.toString(),
-				);
-				const room = await this.roomService.findOne(booking.roomId.toString());
-				const roomType = await this.roomTypeService.findOne(
-					room.roomTypeId.toString(),
-				);
-
-				const guestsInfo = `Adults: ${booking.guests.adults}, Children: ${booking.guests.children}`;
-
-				const serviceNames = booking.services
-					.map((service) => service.name)
-					.join(', ');
-
-				worksheet.addRow({
-					id: booking._id.toString(),
-					roomType: roomType.typeName,
-					roomNumber: room.roomNumber,
-					customerName: customer
-						? `${customer.firstName} ${customer.lastName}`
-						: 'N/A',
-					customerPhone: customer ? customer.phoneNumber : 'N/A',
-					checkinDate: booking.checkinDate
-						? booking.checkinDate.toLocaleString()
-						: 'N/A',
-					checkoutDate: booking.checkoutDate
-						? booking.checkoutDate.toLocaleString()
-						: 'N/A',
-					totalAmount: booking.totalAmount || 0,
-					status: booking.status || 'N/A',
-					guests: guestsInfo,
-					services: serviceNames,
-				});
-			}),
-		);
-
-		// Set headers for Excel response
-		res.setHeader(
-			'Content-Type',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-		);
-		res.setHeader('Content-Disposition', 'attachment; filename=bookings.xlsx');
-
-		// Write workbook to response and send the file
-		await workbook.xlsx.write(res);
-		res.end();
 	}
 }

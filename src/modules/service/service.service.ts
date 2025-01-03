@@ -10,8 +10,6 @@ import { CreateServiceRequestDto } from './dto/createService.request.dto';
 import { UpdateServiceRequestDto } from './dto/updateService.request.dto';
 import { ServiceTypeService } from '../serviceType/serviceType.service';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import * as ExcelJS from 'exceljs';
-import { Response } from 'express';
 import { ServiceType } from '../serviceType/entities/serviceType.entity';
 
 @Injectable()
@@ -19,7 +17,8 @@ export class ServiceService {
 	constructor(
 		@InjectModel(Service.name)
 		private readonly serviceModel: Model<Service>,
-		@InjectModel(ServiceType.name) private serviceTypeModel: Model<ServiceType>,
+		@InjectModel(ServiceType.name)
+		private readonly serviceTypeModel: Model<ServiceType>,
 		private readonly serviceTypeService: ServiceTypeService,
 	) {}
 
@@ -192,81 +191,5 @@ export class ServiceService {
 
 	async findByIds(ids: string[]): Promise<Service[]> {
 		return this.serviceModel.find({ _id: { $in: ids } }).exec();
-	}
-
-	async exportServicesToExcel(res: Response): Promise<void> {
-		const services = await this.serviceModel.find().exec();
-		const serviceTypes = await this.serviceTypeModel.find();
-
-		const serviceTypeMap = serviceTypes.reduce((map, serviceType) => {
-			map[serviceType._id.toString()] = serviceType;
-			return map;
-		}, {});
-
-		const servicesWithTypeNames = services.map((service) => {
-			const serviceType =
-				serviceTypeMap[service.serviceTypeId.toString()] || null;
-			return {
-				...service.toObject(),
-				serviceTypeName: serviceType ? serviceType.typeName : 'N/A',
-			};
-		});
-
-		const workbook = new ExcelJS.Workbook();
-
-		const addSheetWithData = (
-			sheetName: string,
-			data: any[],
-			columns: { header: string; key: string; width: number }[],
-			rowFormatter: (item: any) => Record<string, any>,
-		) => {
-			const sheet = workbook.addWorksheet(sheetName);
-			sheet.columns = columns;
-			data.forEach((item) => {
-				sheet.addRow(rowFormatter(item));
-			});
-		};
-
-		addSheetWithData(
-			'Services',
-			servicesWithTypeNames,
-			[
-				{ header: 'Service ID', key: 'id', width: 30 },
-				{ header: 'Name', key: 'name', width: 25 },
-				{ header: 'Service Type', key: 'serviceTypeName', width: 30 },
-				{ header: 'Description', key: 'description', width: 50 },
-				{ header: 'Price', key: 'price', width: 15 },
-			],
-			(service) => ({
-				id: service._id.toString(),
-				name: service.serviceName,
-				serviceTypeName: service.serviceTypeName || 'N/A',
-				description: service.description || 'N/A',
-				price: service.price || 0,
-			}),
-		);
-
-		addSheetWithData(
-			'Service Types',
-			serviceTypes,
-			[
-				{ header: 'Service Type ID', key: 'id', width: 30 },
-				{ header: 'Name', key: 'name', width: 30 },
-				{ header: 'Description', key: 'description', width: 50 },
-			],
-			(serviceType) => ({
-				id: serviceType._id.toString(),
-				name: serviceType.typeName,
-				description: serviceType.description || 'N/A',
-			}),
-		);
-
-		res.setHeader(
-			'Content-Type',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-		);
-		res.setHeader('Content-Disposition', 'attachment; filename=services.xlsx');
-		await workbook.xlsx.write(res);
-		res.end();
 	}
 }
