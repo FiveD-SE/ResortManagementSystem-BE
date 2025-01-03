@@ -7,8 +7,6 @@ import { UserService } from './user.service';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
-import * as ExcelJS from 'exceljs';
-import { Response } from 'express';
 
 @Injectable()
 export class UserManagerService extends BaseServiceAbstract<User> {
@@ -148,112 +146,5 @@ export class UserManagerService extends BaseServiceAbstract<User> {
 			receptionist,
 			service_staff: serviceStaff,
 		};
-	}
-
-	async exportUsersToExcel(res: Response): Promise<void> {
-		const users = await this.userModel.find({ role: 'user' }).exec();
-
-		const workbook = new ExcelJS.Workbook();
-		const worksheet = workbook.addWorksheet('Users');
-
-		worksheet.columns = [
-			{ header: 'User ID', key: 'id', width: 30 },
-			{ header: 'Name', key: 'name', width: 25 },
-			{ header: 'Email', key: 'email', width: 30 },
-			{ header: 'Phone Number', key: 'phone', width: 20 },
-			{ header: 'Status', key: 'status', width: 20 },
-		];
-
-		users.forEach((user) => {
-			worksheet.addRow({
-				id: user._id.toString(),
-				name: user.firstName + ' ' + user.lastName,
-				email: user.email,
-				phone: user.phoneNumber ? user.phoneNumber : 'N/A',
-				status: user.isActive ? 'Active' : 'Inactive',
-			});
-		});
-
-		res.setHeader(
-			'Content-Type',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-		);
-		res.setHeader('Content-Disposition', 'attachment; filename=users.xlsx');
-		await workbook.xlsx.write(res);
-		res.end();
-	}
-
-	async exportStaffToExcel(res: Response): Promise<void> {
-		const serviceStaff = await this.userModel
-			.find({ role: 'service_staff' })
-			.exec();
-		const receptionist = await this.userModel
-			.find({ role: 'receptionist' })
-			.exec();
-		const allStaff = [...serviceStaff, ...receptionist];
-
-		const workbook = new ExcelJS.Workbook();
-
-		const allStaffSheet = workbook.addWorksheet('All Staff');
-		allStaffSheet.columns = [
-			{ header: 'Staff ID', key: 'id', width: 30 },
-			{ header: 'Name', key: 'name', width: 25 },
-			{ header: 'Email', key: 'email', width: 30 },
-			{ header: 'Role', key: 'role', width: 20 },
-			{ header: 'Status', key: 'status', width: 20 },
-		];
-		allStaff.forEach((staff) => {
-			allStaffSheet.addRow({
-				id: staff._id.toString(),
-				name: staff.firstName + ' ' + staff.lastName,
-				email: staff.email,
-				role: staff.role === 'receptionist' ? 'Receptionist' : 'Service Staff',
-				status: staff.isActive ? 'Active' : 'Inactive',
-			});
-		});
-
-		const serviceStaffSheet = workbook.addWorksheet('Service Staff');
-		serviceStaffSheet.columns = [
-			{ header: 'Staff ID', key: 'id', width: 30 },
-			{ header: 'Name', key: 'name', width: 25 },
-			{ header: 'Email', key: 'email', width: 30 },
-			{ header: 'Role', key: 'role', width: 20 },
-			{ header: 'Status', key: 'status', width: 20 },
-		];
-		serviceStaff.forEach((staff) => {
-			serviceStaffSheet.addRow({
-				id: staff._id.toString(),
-				name: staff.firstName + ' ' + staff.lastName,
-				email: staff.email,
-				role: 'Service Staff',
-				status: staff.isActive ? 'Active' : 'Inactive',
-			});
-		});
-
-		const receptionistSheet = workbook.addWorksheet('Receptionist');
-		receptionistSheet.columns = [
-			{ header: 'Staff ID', key: 'id', width: 30 },
-			{ header: 'Name', key: 'name', width: 25 },
-			{ header: 'Email', key: 'email', width: 30 },
-			{ header: 'Role', key: 'role', width: 20 },
-			{ header: 'Status', key: 'status', width: 20 },
-		];
-		receptionist.forEach((staff) => {
-			receptionistSheet.addRow({
-				id: staff._id.toString(),
-				name: staff.firstName + ' ' + staff.lastName,
-				email: staff.email,
-				role: 'Receptionist',
-				status: staff.isActive ? 'Active' : 'Inactive',
-			});
-		});
-
-		res.setHeader(
-			'Content-Type',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-		);
-		res.setHeader('Content-Disposition', 'attachment; filename=staff.xlsx');
-		await workbook.xlsx.write(res);
-		res.end();
 	}
 }

@@ -164,6 +164,56 @@ export class AdminDashboardController {
 		return this.adminDashboardService.exportToExcel(res);
 	}
 
+	@Get('export-customer-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export customer to Excel',
+	})
+	async exportUsersToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportUsersToExcel(res);
+	}
+
+	@Get('export-staff-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export users to Excel',
+	})
+	async exportStaffsToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportStaffToExcel(res);
+	}
+
+	@Get('export-room-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({ summary: 'Export rooms to Excel' })
+	async exportRoomsToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportRoomsToExcel(res);
+	}
+
+	@Get('export-service-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export services to excel',
+	})
+	async exportServicesToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportServicesToExcel(res);
+	}
+
+	@Get('export-promotion-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({
+		summary: 'Export promotions to Excel',
+	})
+	async exportPromotionsToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportPromotionsToExcel(res);
+	}
+
+	@Get('export-booking-excel')
+	@Roles(UserRole.Admin)
+	@ApiOperation({ summary: 'Export bookings to Excel' })
+	async exportBookingsToExcel(@Res() res: Response) {
+		return this.adminDashboardService.exportBookingToExcel(res);
+	}
+
 	@Get('room-count-by-room-type')
 	@Roles(UserRole.Admin)
 	@ApiOperation({ summary: 'Get room count by room type' })

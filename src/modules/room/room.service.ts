@@ -19,17 +19,17 @@ import { Rating } from '../rating/entities/rating.entity';
 import { GetRoomsResponseDTO } from './dto/getRooms.response';
 import { Booking, BookingDocument } from '../booking/entities/booking.entity';
 import { UserService } from '../user/user.service';
-import * as ExcelJS from 'exceljs';
-import { Response } from 'express';
 
 @Injectable()
 export class RoomService {
 	constructor(
-		@InjectModel(Room.name) private roomModel: Model<RoomDocument>,
-		@InjectModel(RoomType.name) private roomTypeModel: Model<RoomTypeDocument>,
-		@InjectModel(Rating.name) private ratingModel: Model<Rating>,
+		@InjectModel(Room.name) private readonly roomModel: Model<RoomDocument>,
+		@InjectModel(RoomType.name)
+		private readonly roomTypeModel: Model<RoomTypeDocument>,
+		@InjectModel(Rating.name) private readonly ratingModel: Model<Rating>,
 		private readonly imgurService: ImgurService,
-		@InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+		@InjectModel(Booking.name)
+		private readonly bookingModel: Model<BookingDocument>,
 		private readonly userService: UserService,
 	) {}
 
@@ -771,89 +771,5 @@ export class RoomService {
 			prevPage: page > 1 ? page - 1 : null,
 			pagingCounter: skip + 1,
 		};
-	}
-
-	async exportRoomsToExcel(res: Response): Promise<void> {
-		const rooms = await this.roomModel.find().exec();
-		const roomTypes = await this.roomTypeModel.find().exec();
-
-		const roomsWithImages = rooms.map((room) => ({
-			...room.toObject(),
-			images: room.images.join('\r\n') || 'N/A',
-		}));
-
-		const workbook = new ExcelJS.Workbook();
-
-		const addSheetWithData = (
-			sheetName: string,
-			data: any[],
-			columns: { header: string; key: string; width: number }[],
-			rowFormatter: (item: any) => Record<string, any>,
-		) => {
-			const sheet = workbook.addWorksheet(sheetName);
-			sheet.columns = columns;
-			data.forEach((item) => {
-				sheet.addRow(rowFormatter(item));
-			});
-		};
-
-		addSheetWithData(
-			'Rooms',
-			roomsWithImages,
-			[
-				{ header: 'Room ID', key: 'id', width: 30 },
-				{ header: 'Room Number', key: 'roomNumber', width: 20 },
-				{ header: 'Status', key: 'status', width: 20 },
-				{ header: 'Price Per Night', key: 'pricePerNight', width: 15 },
-				{ header: 'Average Rating', key: 'averageRating', width: 15 },
-				{ header: 'Images', key: 'images', width: 50 },
-			],
-			(room) => ({
-				id: room._id.toString(),
-				roomNumber: room.roomNumber,
-				status: room.status,
-				pricePerNight: room.pricePerNight,
-				averageRating: room.averageRating || 0,
-				images: room.images || 'N/A',
-			}),
-		);
-
-		addSheetWithData(
-			'Room Types',
-			roomTypes,
-			[
-				{ header: 'Room Type ID', key: 'id', width: 30 },
-				{ header: 'Type Name', key: 'typeName', width: 30 },
-				{ header: 'Description', key: 'description', width: 50 },
-				{ header: 'Base Price', key: 'basePrice', width: 15 },
-				{ header: 'Guest Amount', key: 'guestAmount', width: 15 },
-				{ header: 'Bed Amount', key: 'bedAmount', width: 15 },
-				{ header: 'Bedroom Amount', key: 'bedroomAmount', width: 15 },
-				{ header: 'Shared Bath Amount', key: 'sharedBathAmount', width: 20 },
-				{ header: 'Amenities', key: 'amenities', width: 50 },
-				{ header: 'Key Features', key: 'keyFeatures', width: 50 },
-			],
-			(roomType) => ({
-				id: roomType._id.toString(),
-				typeName: roomType.typeName,
-				description: roomType.description || 'N/A',
-				basePrice: roomType.basePrice,
-				guestAmount: roomType.guestAmount,
-				bedAmount: roomType.bedAmount,
-				bedroomAmount: roomType.bedroomAmount,
-				sharedBathAmount: roomType.sharedBathAmount,
-				amenities: roomType.amenities.join(', ') || 'N/A',
-				keyFeatures: roomType.keyFeatures.join(', ') || 'N/A',
-			}),
-		);
-
-		res.setHeader(
-			'Content-Type',
-			'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-		);
-		res.setHeader('Content-Disposition', 'attachment; filename=rooms.xlsx');
-
-		await workbook.xlsx.write(res);
-		res.end();
 	}
 }

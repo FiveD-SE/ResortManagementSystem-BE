@@ -9,6 +9,14 @@ import { Room, RoomSchema } from '../room/entities/room.entity';
 import { RoomType, RoomTypeSchema } from '../roomType/entities/roomType.entity';
 import { Service, ServiceSchema } from '../service/entities/service.entity';
 import { RoomModule } from '../room/room.module';
+import {
+	ServiceType,
+	ServiceTypeSchema,
+} from '../serviceType/entities/serviceType.entity';
+import {
+	Promotion,
+	PromotionSchema,
+} from '../promotion/entities/promotion.entity';
 
 @Module({
 	imports: [
@@ -20,6 +28,12 @@ import { RoomModule } from '../room/room.module';
 			{ name: RoomType.name, schema: RoomTypeSchema },
 		]),
 		MongooseModule.forFeature([{ name: Service.name, schema: ServiceSchema }]),
+		MongooseModule.forFeature([
+			{ name: ServiceType.name, schema: ServiceTypeSchema },
+		]),
+		MongooseModule.forFeature([
+			{ name: Promotion.name, schema: PromotionSchema },
+		]),
 		RoomModule,
 	],
 	controllers: [AdminDashboardController],
