@@ -396,7 +396,7 @@ export class BookingService {
 			})),
 			invoice.checkoutUrl,
 			invoice.orderCode.toString(),
-			remainingAmount === 0 ? 10000 : remainingAmount,
+			remainingAmount === 0 ? 1 : remainingAmount,
 		);
 
 		booking.status = BookingStatus.CheckedOut;
