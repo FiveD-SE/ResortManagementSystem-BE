@@ -168,20 +168,31 @@ export class BookingService {
 		}
 
 		let bookingServices = [];
-		if (dto.serviceIds?.length) {
-			const services = await this.serviceService.findByIds(dto.serviceIds);
-			if (services.length !== dto.serviceIds.length) {
+		if (dto.servicesWithQuantities?.length) {
+			const serviceIds = dto.servicesWithQuantities.map((s) => s.serviceId);
+			const services = await this.serviceService.findByIds(serviceIds);
+			if (services.length !== serviceIds.length) {
 				throw new NotFoundException('One or more services not found');
 			}
-			totalAmount += services.reduce((sum, service) => sum + service.price, 0);
+			totalAmount += dto.servicesWithQuantities.reduce((sum, service) => {
+				const foundService = services.find(
+					(s) => s._id.toString() === service.serviceId,
+				);
+				return sum + foundService.price * service.quantity;
+			}, 0);
 
-			bookingServices = services.map((service) => ({
-				serviceId: service._id as ObjectId,
-				status: ServiceStatus.Pending,
-				price: service.price,
-				quantity: 1,
-				name: service.serviceName,
-			}));
+			bookingServices = dto.servicesWithQuantities.map((service) => {
+				const foundService = services.find(
+					(s) => s._id.toString() === service.serviceId,
+				);
+				return {
+					serviceId: foundService._id as ObjectId,
+					status: ServiceStatus.Pending,
+					price: foundService.price,
+					quantity: service.quantity,
+					name: foundService.serviceName,
+				};
+			});
 		}
 
 		const booking = await this.bookingModel.create({
@@ -409,6 +420,7 @@ export class BookingService {
 	async addServiceToBooking(
 		bookingId: string,
 		serviceId: string,
+		quantity: number,
 	): Promise<Booking> {
 		const booking = await this.bookingModel.findById(bookingId).exec();
 
@@ -426,18 +438,18 @@ export class BookingService {
 		);
 
 		if (existingService) {
-			existingService.quantity += 1;
+			existingService.quantity += quantity;
 		} else {
 			booking.services.push({
 				serviceId: new Types.ObjectId(serviceId),
 				status: ServiceStatus.Pending,
 				price: service.price,
-				quantity: 1,
+				quantity,
 				name: service.serviceName,
 			});
 		}
 
-		booking.totalAmount += service.price;
+		booking.totalAmount += service.price * quantity;
 		await booking.save();
 
 		return booking;
@@ -445,7 +457,7 @@ export class BookingService {
 
 	async addServicesToBooking(
 		bookingId: string,
-		serviceIds: string[],
+		servicesWithQuantities: { serviceId: string; quantity: number }[],
 	): Promise<Booking> {
 		const booking = await this.bookingModel.findById(bookingId).exec();
 
@@ -453,29 +465,35 @@ export class BookingService {
 			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
 		}
 
+		const serviceIds = servicesWithQuantities.map((s) => s.serviceId);
 		const services = await this.serviceService.findByIds(serviceIds);
 		if (services.length !== serviceIds.length) {
 			throw new NotFoundException('One or more services not found');
 		}
 
-		for (const service of services) {
+		for (const { serviceId, quantity } of servicesWithQuantities) {
+			const service = services.find((s) => s.id === serviceId);
+			if (!service) {
+				throw new NotFoundException(`Service with ID ${serviceId} not found`);
+			}
+
 			const existingService = booking.services.find(
-				(s) => s.serviceId.toString() === service.id,
+				(s) => s.serviceId.toString() === serviceId,
 			);
 
 			if (existingService) {
-				existingService.quantity += 1;
+				existingService.quantity += quantity;
 			} else {
 				booking.services.push({
-					serviceId: new Types.ObjectId(service.id),
+					serviceId: new Types.ObjectId(serviceId),
 					status: ServiceStatus.Pending,
 					price: service.price,
-					quantity: 1,
+					quantity,
 					name: service.serviceName,
 				});
 			}
 
-			booking.totalAmount += service.price;
+			booking.totalAmount += service.price * quantity;
 		}
 
 		await booking.save();

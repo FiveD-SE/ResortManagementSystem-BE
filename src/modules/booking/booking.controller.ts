@@ -10,7 +10,7 @@ import {
 	Patch,
 	BadRequestException,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
 import { BookingService } from './booking.service';
 import { CreateBookingDTO } from './dto/createBooking.dto';
@@ -24,6 +24,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { RequestWithUser } from '@/types/request.type';
 import { BookingServiceDTO } from './dto/bookingService.dto';
+import { BookingServicesDTO } from './dto/bookingServices.dto';
 
 @Controller('bookings')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -138,6 +139,7 @@ export class BookingController {
 	async addServiceToBooking(
 		@Param('bookingId') bookingId: string,
 		@Param('serviceId') serviceId: string,
+		@Param('quantity') quantity: number,
 		@Req() req: RequestWithUser,
 	): Promise<Booking> {
 		const userId = req.user._id.toString();
@@ -149,15 +151,19 @@ export class BookingController {
 			);
 		}
 
-		return this.bookingService.addServiceToBooking(bookingId, serviceId);
+		return this.bookingService.addServiceToBooking(
+			bookingId,
+			serviceId,
+			quantity,
+		);
 	}
-
 	@Post(':bookingId/services')
 	@Roles(UserRole.Admin, UserRole.Receptionist, UserRole.User)
 	@ApiOperation({ summary: 'Add multiple services to a booking' })
+	@ApiBody({ type: BookingServicesDTO })
 	async addServicesToBooking(
 		@Param('bookingId') bookingId: string,
-		@Body() serviceIds: string[],
+		@Body() bookingServicesDTO: BookingServicesDTO,
 		@Req() req: RequestWithUser,
 	): Promise<Booking> {
 		const userId = req.user._id.toString();
@@ -169,7 +175,10 @@ export class BookingController {
 			);
 		}
 
-		return this.bookingService.addServicesToBooking(bookingId, serviceIds);
+		return this.bookingService.addServicesToBooking(
+			bookingId,
+			bookingServicesDTO.servicesWithQuantities,
+		);
 	}
 
 	@Get('user/:userId')
