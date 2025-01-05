@@ -33,6 +33,7 @@ export class BookingController {
 
 	@Post(':roomId')
 	@Roles(UserRole.User)
+	@ApiBody({ type: CreateBookingDTO })
 	@ApiOperation({ summary: 'Create a new booking' })
 	@ApiResponse({ status: 201, description: 'Booking created successfully' })
 	async createBooking(
