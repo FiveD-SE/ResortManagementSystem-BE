@@ -45,21 +45,15 @@ export class RoomService {
 
 		const today = new Date();
 		const availableStart = new Date(today);
-		availableStart.setDate(availableStart.getDate() + 1); // Start from tomorrow
+		// Set to 14:00 UTC+7 (07:00 UTC)
+		availableStart.setUTCHours(7, 0, 0, 0);
 
-		// Function to check if a date overlaps with any booking's checkin or checkout date
-		const isDateOverlapping = (date: Date, booking: Booking) => {
-			const bookingCheckin = new Date(booking.checkinDate);
-			const bookingCheckout = new Date(booking.checkoutDate);
-
-			// Reset time parts to compare only dates
-			date.setHours(0, 0, 0, 0);
-			bookingCheckin.setHours(0, 0, 0, 0);
-			bookingCheckout.setHours(0, 0, 0, 0);
-
+		// Function to compare dates without time
+		const isSameDay = (date1: Date, date2: Date) => {
 			return (
-				date.getTime() === bookingCheckin.getTime() ||
-				date.getTime() === bookingCheckout.getTime()
+				date1.getFullYear() === date2.getFullYear() &&
+				date1.getMonth() === date2.getMonth() &&
+				date1.getDate() === date2.getDate()
 			);
 		};
 
@@ -68,22 +62,28 @@ export class RoomService {
 			const bookingStart = new Date(booking.checkinDate);
 			const bookingEnd = new Date(booking.checkoutDate);
 
-			// Check if either start or end date overlaps with booking dates
-			if (
-				isDateOverlapping(new Date(start), booking) ||
-				isDateOverlapping(new Date(end), booking)
-			) {
+			// If the start date is the same as a booking's check-in date, it's an overlap
+			if (isSameDay(start, bookingStart)) {
 				return true;
 			}
 
+			// If the start date is the same as a booking's check-out date, it's NOT an overlap
+			// (because check-out is at 12:00 and check-in is at 14:00)
+			if (isSameDay(start, bookingEnd)) {
+				return false;
+			}
+
 			// Check if the week period overlaps with the booking period
-			return start <= bookingEnd && end >= bookingStart;
+			// We use start < bookingEnd instead of <= because we allow same-day checkout/checkin
+			return start < bookingEnd && end > bookingStart;
 		};
 
 		let found = false;
 		while (!found) {
 			const weekEnd = new Date(availableStart);
 			weekEnd.setDate(weekEnd.getDate() + 7);
+			// Set to 12:00 UTC+7 (05:00 UTC)
+			weekEnd.setUTCHours(5, 0, 0, 0);
 
 			// Check if this week overlaps with any booking
 			const hasBookingOverlap = sortedBookings.some((booking) =>
@@ -95,11 +95,15 @@ export class RoomService {
 			} else {
 				// Move to the next day
 				availableStart.setDate(availableStart.getDate() + 1);
+				// Maintain check-in time at 14:00 UTC+7 (07:00 UTC)
+				availableStart.setUTCHours(7, 0, 0, 0);
 			}
 		}
 
 		const availableEnd = new Date(availableStart);
 		availableEnd.setDate(availableEnd.getDate() + 7);
+		// Set to 12:00 UTC+7 (05:00 UTC)
+		availableEnd.setUTCHours(5, 0, 0, 0);
 
 		return { checkinDate: availableStart, checkoutDate: availableEnd };
 	}
@@ -596,23 +600,45 @@ export class RoomService {
 									input: '$$sortedBookings',
 									initialValue: {
 										checkinDate: {
-											$dateAdd: {
-												startDate: '$$today',
-												unit: 'day',
-												amount: 1,
+											$dateFromParts: {
+												year: { $year: '$$today' },
+												month: { $month: '$$today' },
+												day: { $dayOfMonth: '$$today' },
+												hour: 7,
+												minute: 0,
 											},
 										},
 										checkoutDate: {
-											$dateAdd: {
-												startDate: {
-													$dateAdd: {
-														startDate: '$$today',
-														unit: 'day',
-														amount: 1,
+											$dateFromParts: {
+												year: {
+													$year: {
+														$dateAdd: {
+															startDate: '$$today',
+															unit: 'day',
+															amount: 7,
+														},
 													},
 												},
-												unit: 'day',
-												amount: 7,
+												month: {
+													$month: {
+														$dateAdd: {
+															startDate: '$$today',
+															unit: 'day',
+															amount: 7,
+														},
+													},
+												},
+												day: {
+													$dayOfMonth: {
+														$dateAdd: {
+															startDate: '$$today',
+															unit: 'day',
+															amount: 7,
+														},
+													},
+												},
+												hour: 5,
+												minute: 0,
 											},
 										},
 									},
@@ -623,58 +649,94 @@ export class RoomService {
 													{
 														$and: [
 															{
-																$lte: [
+																$lt: [
 																	'$$this.checkinDate',
 																	'$$value.checkoutDate',
 																],
 															},
 															{
-																$gte: [
+																$gt: [
 																	'$$this.checkoutDate',
 																	'$$value.checkinDate',
+																],
+															},
+															{
+																$ne: [
+																	{
+																		$dateToString: {
+																			date: '$$value.checkinDate',
+																			format: '%Y-%m-%d',
+																		},
+																	},
+																	{
+																		$dateToString: {
+																			date: '$$this.checkoutDate',
+																			format: '%Y-%m-%d',
+																		},
+																	},
 																],
 															},
 														],
 													},
 													{
 														$eq: [
-															{ $dayOfYear: '$$this.checkinDate' },
-															{ $dayOfYear: '$$value.checkinDate' },
-														],
-													},
-													{
-														$eq: [
-															{ $dayOfYear: '$$this.checkinDate' },
-															{ $dayOfYear: '$$value.checkoutDate' },
-														],
-													},
-													{
-														$eq: [
-															{ $dayOfYear: '$$this.checkoutDate' },
-															{ $dayOfYear: '$$value.checkinDate' },
-														],
-													},
-													{
-														$eq: [
-															{ $dayOfYear: '$$this.checkoutDate' },
-															{ $dayOfYear: '$$value.checkoutDate' },
+															{
+																$dateToString: {
+																	date: '$$this.checkinDate',
+																	format: '%Y-%m-%d',
+																},
+															},
+															{
+																$dateToString: {
+																	date: '$$value.checkinDate',
+																	format: '%Y-%m-%d',
+																},
+															},
 														],
 													},
 												],
 											},
 											then: {
 												checkinDate: {
-													$dateAdd: {
-														startDate: '$$this.checkoutDate',
-														unit: 'day',
-														amount: 1,
+													$dateFromParts: {
+														year: { $year: '$$this.checkoutDate' },
+														month: { $month: '$$this.checkoutDate' },
+														day: { $dayOfMonth: '$$this.checkoutDate' },
+														hour: 7,
+														minute: 0,
 													},
 												},
 												checkoutDate: {
-													$dateAdd: {
-														startDate: '$$this.checkoutDate',
-														unit: 'day',
-														amount: 8,
+													$dateFromParts: {
+														year: {
+															$year: {
+																$dateAdd: {
+																	startDate: '$$this.checkoutDate',
+																	unit: 'day',
+																	amount: 7,
+																},
+															},
+														},
+														month: {
+															$month: {
+																$dateAdd: {
+																	startDate: '$$this.checkoutDate',
+																	unit: 'day',
+																	amount: 7,
+																},
+															},
+														},
+														day: {
+															$dayOfMonth: {
+																$dateAdd: {
+																	startDate: '$$this.checkoutDate',
+																	unit: 'day',
+																	amount: 7,
+																},
+															},
+														},
+														hour: 5,
+														minute: 0,
 													},
 												},
 											},
