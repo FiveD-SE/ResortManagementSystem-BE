@@ -246,10 +246,7 @@ export class AuthService {
 	async loginWithGoogle(user: any) {
 		let existingUser = await this.userService.findOne({ email: user.email });
 		if (!existingUser) {
-			const defaultPassword = await bcrypt.hash(
-				'defaultPassword',
-				this.SALT_ROUND,
-			);
+			const defaultPassword = await bcrypt.hash('Example@123', this.SALT_ROUND);
 			existingUser = await this.userService.create({
 				email: user.email,
 				firstName: user.firstName || 'DefaultFirstName',
