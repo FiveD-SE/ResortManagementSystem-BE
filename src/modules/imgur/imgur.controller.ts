@@ -1,8 +1,9 @@
+import { Controller, UploadedFile } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
+
 import { ApiBodyWithSingleFile } from '@/decorators/apiBodyWithSingleFile.decorator';
 import { ApiPost } from '@/decorators/apiPost.decorator';
-import { Controller, UploadedFile } from '@nestjs/common';
 import { ImgurService } from './imgur.service';
-import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { UploadImageToImgurResponseDto } from './dto/response/uploadImageToImgur.response.dto';
 
 @Controller('image')

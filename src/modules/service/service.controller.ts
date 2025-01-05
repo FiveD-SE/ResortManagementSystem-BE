@@ -10,6 +10,8 @@ import {
 	Query,
 	UseGuards,
 } from '@nestjs/common';
+import { ApiQuery } from '@nestjs/swagger';
+
 import { ServiceService } from './service.service';
 import { CreateServiceRequestDto } from './dto/createService.request.dto';
 import { UpdateServiceRequestDto } from './dto/updateService.request.dto';
@@ -20,7 +22,6 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { ApiQuery } from '@nestjs/swagger';
 
 @Controller('services')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)

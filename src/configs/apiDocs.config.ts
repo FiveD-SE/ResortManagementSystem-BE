@@ -1,6 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { SwaggerTheme, SwaggerThemeNameEnum } from 'swagger-themes';
+
 import metadata from '../metadata';
 
 export async function configSwagger(app: INestApplication) {

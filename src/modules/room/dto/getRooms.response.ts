@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { RoomStatus } from '../entities/room.entity';
 
 export class GetRoomsResponseDTO {

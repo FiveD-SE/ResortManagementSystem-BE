@@ -1,6 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ImgurClient } from 'imgur';
+
 import { UploadImageToImgurResponseDto } from './dto/response/uploadImageToImgur.response.dto';
 
 @Injectable()

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+
 import { RatingService } from './rating.service';
 import { RatingController } from './rating.controller';
 import { Rating, RatingSchema } from './entities/rating.entity';

@@ -1,5 +1,3 @@
-import { OnlyAdmin } from '@/decorators/auth.decorator';
-import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSerializer.interceptor';
 import {
 	BadRequestException,
 	Body,
@@ -11,9 +9,6 @@ import {
 	Query,
 	UseInterceptors,
 } from '@nestjs/common';
-import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
-import { User, UserRole } from './entities/user.entity';
-import { UserManagerService } from './userManager.service';
 import {
 	ApiBody,
 	ApiOperation,
@@ -22,6 +17,12 @@ import {
 	ApiResponse,
 	ApiTags,
 } from '@nestjs/swagger';
+
+import { OnlyAdmin } from '@/decorators/auth.decorator';
+import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSerializer.interceptor';
+import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
+import { User, UserRole } from './entities/user.entity';
+import { UserManagerService } from './userManager.service';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { Roles } from '@/decorators/roles.decorator';

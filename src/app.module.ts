@@ -1,9 +1,10 @@
-import { UserModule } from '@/modules/user/user.module';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { MongooseModule } from '@nestjs/mongoose';
 import * as Joi from 'joi';
+
+import { UserModule } from '@/modules/user/user.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './configs/db.config';

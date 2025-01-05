@@ -5,24 +5,24 @@ import {
 	Delete,
 	Get,
 	Param,
-	ParseIntPipe,
 	Patch,
 	Post,
+	Query,
 	UseGuards,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+
+import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
+import { Public } from '@/decorators/auth.decorator';
+import { Roles } from '@/decorators/roles.decorator';
+import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserRole } from '../user/entities/user.entity';
 import { CreateRoomTypeDTO } from './dto/createRoomType.request.dto';
 import { UpdateRoomTypeDTO } from './dto/updateRoomType.request.dto';
-import { RoomTypeService } from './roomType.service';
 import { RoomType } from './entities/roomType.entity';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
-import { Roles } from '@/decorators/roles.decorator';
-import { UserRole } from '../user/entities/user.entity';
-import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
-import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { Query } from '@nestjs/common';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
-import { Public } from '@/decorators/auth.decorator';
+import { RoomTypeService } from './roomType.service';
 
 @Controller('room-types')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)

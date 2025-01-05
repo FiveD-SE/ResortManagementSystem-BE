@@ -1,5 +1,6 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+
 import { BookingController } from './booking.controller';
 import { BookingService } from './booking.service';
 import { Booking, BookingSchema } from './entities/booking.entity';

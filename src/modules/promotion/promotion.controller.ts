@@ -10,6 +10,8 @@ import {
 	Query,
 	BadRequestException,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+
 import { PromotionService } from './promotion.service';
 import { CreatePromotionRequestDto } from './dto/createPromotion.request.dto';
 import { Promotion } from './entities/promotion.entity';
@@ -19,7 +21,6 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { RequestWithUser } from '@/types/request.type';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 
 @Controller('promotions')

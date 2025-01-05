@@ -10,6 +10,8 @@ import {
 	Query,
 	BadRequestException,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
+
 import { ReportService } from './report.service';
 import { CreateReportRequestDto } from './dto/createReport.request.dto';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
@@ -20,7 +22,6 @@ import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 @Controller('reports')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)

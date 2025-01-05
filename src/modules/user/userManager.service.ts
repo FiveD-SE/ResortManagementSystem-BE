@@ -1,12 +1,13 @@
-import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model, Types } from 'mongoose';
+
+import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { User, UserDocument, UserRole } from './entities/user.entity';
 import { UserRepositoryInterface } from './interfaces/user.interface';
 import { UpdateUserRequestDTO } from './dto/request/updateUser.request.dto';
 import { UserService } from './user.service';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
 
 @Injectable()
 export class UserManagerService extends BaseServiceAbstract<User> {

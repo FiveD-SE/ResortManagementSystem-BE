@@ -1,5 +1,3 @@
-import { RoomTypeService } from './../roomType/roomType.service';
-import { ServiceTypeService } from './../serviceType/serviceType.service';
 import {
 	Injectable,
 	BadRequestException,
@@ -7,6 +5,10 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, ObjectId, Types } from 'mongoose';
+import { ConfigService } from '@nestjs/config';
+
+import { RoomTypeService } from './../roomType/roomType.service';
+import { ServiceTypeService } from './../serviceType/serviceType.service';
 import {
 	Booking,
 	BookingDocument,
@@ -23,7 +25,6 @@ import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { CreateInvoiceDto } from '../invoice/dto/createInvoice.dto';
 import { Invoice } from '../invoice/entities/invoice.entity';
 import { InvoiceService } from '../invoice/invoice.service';
-import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { BookingServiceDTO } from './dto/bookingService.dto';

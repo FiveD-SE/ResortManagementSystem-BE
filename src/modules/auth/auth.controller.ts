@@ -1,5 +1,3 @@
-import { ApiPost } from '@/decorators/apiPost.decorator';
-import { RequestWithUser } from '@/types/request.type';
 import {
 	Body,
 	Controller,
@@ -10,6 +8,12 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse } from '@nestjs/swagger';
+import { AuthGuard } from '@nestjs/passport';
+import { ConfigService } from '@nestjs/config';
+import { Response } from 'express';
+
+import { ApiPost } from '@/decorators/apiPost.decorator';
+import { RequestWithUser } from '@/types/request.type';
 import { AuthService } from './auth.service';
 import { ForgotPasswordRequestDTO } from './dto/request/forgotPassword.request.dto';
 import { LoginRequestDTO } from './dto/request/login.request.dto';
@@ -20,15 +24,11 @@ import { SendEmailVerfiyRequestDTO } from './dto/request/sendEmailVerify.request
 import { VerifyAccountRequestDTO } from './dto/request/verifyAccount.request.dto';
 import { LoginResponseDTO } from './dto/response/login.response.dto';
 import { JwtAccessTokenGuard } from './guards/jwt-access-token.guard';
-import { JwtRefreshTokenGuard } from './guards/jwt-refresh-token.guard';
 import { LocalAuthGuard } from './guards/local.guard';
-import { AuthGuard } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
 import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSerializer.interceptor';
 import { User } from '../user/entities/user.entity';
 import { ChangePasswWordRequestDto } from './dto/request/changePassword.request.dto';
-import { ConfigService } from '@nestjs/config';
-import { Response } from 'express';
 
 @Controller('auth')
 @UseInterceptors(MongooseClassSerializerInterceptor(User))

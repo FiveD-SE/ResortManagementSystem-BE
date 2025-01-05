@@ -1,7 +1,8 @@
-import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { isValidObjectId, Types } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+
+import { BaseServiceAbstract } from '@/services/base/base.abstract.service';
 import { ImgurService } from '../imgur/imgur.service';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
 import { User, UserRole } from './entities/user.entity';
