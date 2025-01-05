@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
+
 import { Promotion, PromotionSchema } from './entities/promotion.entity';
 import {
 	UserPromotion,

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+
 import { CreateServiceTypeRequestDto } from './dto/createServiceType.request.dto';
 import { UpdateServiceTypeRequestDto } from './dto/updateServiceType.request.dto';
 import {

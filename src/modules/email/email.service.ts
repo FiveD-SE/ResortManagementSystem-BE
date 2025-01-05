@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
-import { EmailDataInterface } from './interfaces/emailData.interface';
 import * as pdf from 'html-pdf';
+
+import { EmailDataInterface } from './interfaces/emailData.interface';
 
 @Injectable()
 export class EmailService {

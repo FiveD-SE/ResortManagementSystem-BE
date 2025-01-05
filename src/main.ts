@@ -1,11 +1,12 @@
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from './app.module';
 import {
 	BadRequestException,
 	ValidationPipe,
 	Logger as AppLogger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+
+import { AppModule } from './app.module';
 import { configSwagger } from './configs/apiDocs.config';
 
 async function bootstrap() {

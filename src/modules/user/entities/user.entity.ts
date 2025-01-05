@@ -1,8 +1,9 @@
-import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Exclude } from 'class-transformer';
 import { HydratedDocument, Types } from 'mongoose';
 import * as paginate from 'mongoose-paginate-v2';
+
+import { BaseEntity } from '@/modules/shared/base/base.entity';
 
 export enum UserRole {
 	Admin = 'admin',

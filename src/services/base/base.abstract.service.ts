@@ -1,5 +1,6 @@
 import { BaseEntity } from '@modules/shared/base/base.entity';
 import { FindAllResponse } from 'src/types/common.type';
+
 import { BaseServiceInterface } from './base.interface.service';
 import { BaseRepositoryInterface } from '@/repositories/base/base.interface.repo';
 

@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+
 import { Room } from '../entities/room.entity';
 import { RoomType } from '../../roomType/entities/roomType.entity';
 import { Rating } from '../../rating/entities/rating.entity';

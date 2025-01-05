@@ -7,6 +7,7 @@ import {
 	IsArray,
 	ArrayNotEmpty,
 } from 'class-validator';
+
 import { RoomStatus } from '../entities/room.entity';
 
 export class UpdateRoomDTO {

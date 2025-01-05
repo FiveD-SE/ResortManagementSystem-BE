@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { BookingService, BookingServiceSchema } from './booking-service.entity';
 

@@ -1,7 +1,3 @@
-import { ApiBodyWithSingleFile } from '@/decorators/apiBodyWithSingleFile.decorator';
-import { ApiPost } from '@/decorators/apiPost.decorator';
-import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSerializer.interceptor';
-import { RequestWithUser } from '@/types/request.type';
 import {
 	Body,
 	Controller,
@@ -16,6 +12,11 @@ import {
 	UseInterceptors,
 } from '@nestjs/common';
 import { ApiOkResponse } from '@nestjs/swagger';
+
+import { ApiBodyWithSingleFile } from '@/decorators/apiBodyWithSingleFile.decorator';
+import { ApiPost } from '@/decorators/apiPost.decorator';
+import MongooseClassSerializerInterceptor from '@/interceptors/mongooseClassSerializer.interceptor';
+import { RequestWithUser } from '@/types/request.type';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
 import { ChangeProfileRequestDTO } from './dto/request/changeProfile.request.dto';
 import { User, UserRole } from './entities/user.entity';

@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+
 import { ServiceStatus } from '../../service/enums/service-status.enum';
 
 @Schema()

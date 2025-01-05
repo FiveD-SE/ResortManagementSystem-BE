@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
+
 import { CreateRoomTypeDTO } from './dto/createRoomType.request.dto';
 import { UpdateRoomTypeDTO } from './dto/updateRoomType.request.dto';
 import { RoomType, RoomTypeDocument } from './entities/roomType.entity';

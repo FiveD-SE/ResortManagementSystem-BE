@@ -1,4 +1,3 @@
-import { PaginateData } from '@/types/common.type';
 import {
 	ClassSerializerInterceptor,
 	PlainLiteralObject,
@@ -6,6 +5,8 @@ import {
 } from '@nestjs/common';
 import { ClassTransformOptions, plainToClass } from 'class-transformer';
 import { Document } from 'mongoose';
+
+import { PaginateData } from '@/types/common.type';
 
 export default function MongooseClassSerializerInterceptor(
 	classToIntercept: Type,

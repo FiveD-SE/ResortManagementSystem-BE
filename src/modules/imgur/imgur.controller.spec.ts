@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+
 import { ImgurController } from './imgur.controller';
 import { ImgurService } from './imgur.service';
 

@@ -11,6 +11,8 @@ import {
 	UseGuards,
 	Query,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+
 import { CreateRoomDTO } from './dto/createRoom.dto';
 import { UpdateRoomDTO } from './dto/updateRoom.dto';
 import { RoomService } from './room.service';
@@ -23,7 +25,6 @@ import { UserRole } from '../user/entities/user.entity';
 import { ApiBodyWithFiles } from '@/decorators/apiBodyWithFiles.decorator';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { RoomDetailDTO } from './dto/roomDetail.dto';
 import { Public } from '@/decorators/auth.decorator';
 

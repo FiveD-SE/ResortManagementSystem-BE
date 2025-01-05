@@ -1,11 +1,12 @@
-import {
-	accessTokenKeyPair,
-	refreshTokenKeyPair,
-} from '@/constraints/jwt.constraints';
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
+
+import {
+	accessTokenKeyPair,
+	refreshTokenKeyPair,
+} from '@/constraints/jwt.constraints';
 import { EmailService } from '../email/email.service';
 import { TokenService } from '../token/token.service';
 import { ChangePasswWordRequestDto } from './dto/request/changePassword.request.dto';

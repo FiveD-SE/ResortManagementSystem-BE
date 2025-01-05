@@ -1,4 +1,5 @@
 import { NestFactory } from '@nestjs/core';
+
 import { AppModule } from '../app.module';
 import { UserService } from '../modules/user/user.service';
 import { ServiceTypeService } from '../modules/serviceType/serviceType.service';

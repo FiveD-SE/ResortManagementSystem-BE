@@ -10,10 +10,11 @@ import {
 	Patch,
 	BadRequestException,
 } from '@nestjs/common';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
+
 import { BookingService } from './booking.service';
 import { CreateBookingDTO } from './dto/createBooking.dto';
 import { JwtAccessTokenGuard } from '../auth/guards/jwt-access-token.guard';
-import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { Roles } from '@/decorators/roles.decorator';
 import { UserRole } from '../user/entities/user.entity';
 import { ApiPaginationQuery } from '@/decorators/apiPaginationQuery.decorator';

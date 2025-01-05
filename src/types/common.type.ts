@@ -1,5 +1,6 @@
-import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { ApiProperty } from '@nestjs/swagger';
+
+import { BaseEntity } from '@/modules/shared/base/base.entity';
 
 export enum SortOrder {
 	ASC = 'asc',
