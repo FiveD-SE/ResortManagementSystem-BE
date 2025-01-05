@@ -1,15 +1,34 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
-	IsDate,
-	IsNotEmpty,
-	IsOptional,
 	IsArray,
+	IsDate,
+	IsEnum,
+	IsNotEmpty,
+	IsNumber,
+	IsOptional,
 	IsString,
 	ValidateNested,
-	IsNumber,
-	IsEnum,
 } from 'class-validator';
+class GuestsDto {
+	@IsNumber()
+	@IsNotEmpty()
+	adults: number;
+
+	@IsNumber()
+	@IsNotEmpty()
+	children: number;
+}
+
+class ServiceWithQuantity {
+	@IsNotEmpty()
+	@IsString()
+	serviceId: string;
+
+	@IsNotEmpty()
+	@IsNumber()
+	quantity: number;
+}
 
 export class CreateBookingDTO {
 	@ApiProperty()
@@ -25,8 +44,9 @@ export class CreateBookingDTO {
 	@ApiProperty({ required: false })
 	@IsOptional()
 	@IsArray()
-	@IsString({ each: true })
-	serviceIds?: string[];
+	@ValidateNested({ each: true })
+	@Type(() => ServiceWithQuantity)
+	servicesWithQuantities?: ServiceWithQuantity[];
 
 	@ApiProperty({ required: false })
 	@IsOptional()
@@ -37,23 +57,10 @@ export class CreateBookingDTO {
 	@IsNotEmpty()
 	@ValidateNested()
 	@Type(() => GuestsDto)
-	guests: {
-		adults: number;
-		children: number;
-	};
+	guests: GuestsDto;
 
 	@ApiProperty({ enum: ['Transfer', 'Pay on arrival'] })
 	@IsNotEmpty()
 	@IsEnum(['Transfer', 'Pay on arrival'])
 	paymentMethod: string;
-}
-
-class GuestsDto {
-	@IsNumber()
-	@IsNotEmpty()
-	adults: number;
-
-	@IsNumber()
-	@IsNotEmpty()
-	children: number;
 }
