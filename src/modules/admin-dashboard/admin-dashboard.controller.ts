@@ -161,8 +161,26 @@ export class AdminDashboardController {
 		status: 200,
 		description: 'The data has been successfully exported to Excel.',
 	})
-	async exportToExcel(@Res() res: Response) {
-		return this.adminDashboardService.exportToExcel(res);
+	@ApiQuery({
+		name: 'startDate',
+		required: false,
+		type: String,
+		description: 'Start date of the range',
+		format: 'date',
+	})
+	@ApiQuery({
+		name: 'endDate',
+		required: false,
+		type: String,
+		description: 'End date of the range',
+		format: 'date',
+	})
+	async exportToExcel(
+		@Query('startDate') startDate: string,
+		@Query('endDate') endDate: string,
+		@Res() res: Response,
+	) {
+		return this.adminDashboardService.exportToExcel(startDate, endDate, res);
 	}
 
 	@Get('export-customer-excel')

@@ -10,4 +10,8 @@ export class CreateServiceTypeRequestDto {
 	@IsString()
 	@MaxLength(500)
 	description?: string;
+
+	@IsNotEmpty()
+	@IsString()
+	roomTypeId?: string;
 }

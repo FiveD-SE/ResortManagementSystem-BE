@@ -39,7 +39,7 @@ export class UserController {
 		) {
 			throw new ForbiddenException('You can only access your own profile');
 		}
-		return this.userService.findByID(id);
+		return this.userService.getUser(id);
 	}
 
 	@Post()

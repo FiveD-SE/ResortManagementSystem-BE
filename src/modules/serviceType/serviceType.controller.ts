@@ -86,4 +86,14 @@ export class ServiceTypeController {
 	remove(@Param('id') id: string): Promise<void> {
 		return this.serviceTypeService.remove(id);
 	}
+
+	@Get('roomType/:roomTypeId')
+	@ApiOperation({
+		summary: 'Get all service types by room type ID',
+	})
+	findAllByRoomType(
+		@Param('roomTypeId') roomTypeId: string,
+	): Promise<ServiceType[]> {
+		return this.serviceTypeService.findAllByRoomType(roomTypeId);
+	}
 }

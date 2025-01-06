@@ -86,6 +86,77 @@ export class ServiceService {
 		};
 	}
 
+	async findAllByRoomType(
+		roomTypeId: string,
+		params: PaginateParams,
+	): Promise<PaginateData<Service>> {
+		const {
+			page = 1,
+			limit = 10,
+			sortBy = 'createdAt',
+			sortOrder = SortOrder.DESC,
+		} = params;
+
+		const skip = (page - 1) * limit;
+		const sortOptions: Record<string, 1 | -1> = {
+			[sortBy]: sortOrder === SortOrder.ASC ? 1 : -1,
+		};
+
+		if (!Types.ObjectId.isValid(roomTypeId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const serviceTypes = await this.serviceTypeModel
+			.find({ roomTypeId: roomTypeId })
+			.exec();
+
+		const serviceTypeIds = serviceTypes.map((serviceType) => serviceType._id);
+
+		if (serviceTypeIds.length === 0) {
+			return {
+				docs: [],
+				totalDocs: 0,
+				page,
+				limit,
+				totalPages: 0,
+				hasNextPage: false,
+				hasPrevPage: false,
+				nextPage: null,
+				prevPage: null,
+				pagingCounter: skip + 1,
+			};
+		}
+
+		const [count, services] = await Promise.all([
+			this.serviceModel
+				.countDocuments({
+					serviceTypeId: { $in: serviceTypeIds },
+				})
+				.exec(),
+			this.serviceModel
+				.find({ serviceTypeId: { $in: serviceTypeIds } })
+				.sort(sortOptions as any)
+				.skip(skip)
+				.limit(limit)
+				.exec(),
+		]);
+
+		const totalPages = Math.ceil(count / limit);
+
+		return {
+			docs: services,
+			totalDocs: count,
+			page,
+			limit,
+			totalPages,
+			hasNextPage: page < totalPages,
+			hasPrevPage: page > 1,
+			nextPage: page < totalPages ? page + 1 : null,
+			prevPage: page > 1 ? page - 1 : null,
+			pagingCounter: skip + 1,
+		};
+	}
+
 	async findOne(id: string): Promise<Service> {
 		if (!Types.ObjectId.isValid(id)) {
 			throw new BadRequestException('Invalid ID format');

@@ -440,7 +440,7 @@ export class AdminDashboardService {
 		return finalResults;
 	}
 
-	async exportToExcel(res: Response) {
+	async exportToExcel(start: string, end: string, res: Response) {
 		const workbook = new ExcelJS.Workbook();
 		const today = new Date();
 		const startOfToday = new Date(today.setHours(0, 0, 0, 0));
@@ -462,12 +462,25 @@ export class AdminDashboardService {
 			},
 		};
 
-		for (const [key, dateRange] of Object.entries(dateRanges)) {
+		const filters =
+			start && end
+				? [{ start: this.convertToDate(start), end: this.convertToDate(end) }]
+				: Object.values(dateRanges);
+
+		for (const dateRange of filters) {
 			const invoices = await this.getInvoices(dateRange);
 			const revenueByService = await this.getRevenueByService(dateRange);
 			const revenueByRoomType = await this.getRevenueByRoomType(dateRange);
 
-			const invoiceSheet = workbook.addWorksheet(`Invoices - ${key}`);
+			const rangeKey =
+				filters.length > 1
+					? this.getRangeKey(dateRange, dateRanges)
+					: 'Custom Range';
+
+			// Invoices sheet
+			const invoiceSheet = workbook.addWorksheet(
+				`Invoices${filters.length > 1 ? ' - ' + rangeKey : ''}`,
+			);
 			invoiceSheet.columns = [
 				{ header: 'Invoice ID', key: 'id', width: 30 },
 				{ header: 'User ID', key: 'userId', width: 30 },
@@ -489,7 +502,10 @@ export class AdminDashboardService {
 				});
 			});
 
-			const serviceSheet = workbook.addWorksheet(`Revenue by Service - ${key}`);
+			// Revenue by Service sheet
+			const serviceSheet = workbook.addWorksheet(
+				`Revenue by Service${filters.length > 1 ? ' - ' + rangeKey : ''}`,
+			);
 			serviceSheet.columns = [
 				{ header: 'Service Name', key: 'serviceName', width: 30 },
 				{ header: 'Revenue', key: 'revenue', width: 15 },
@@ -501,8 +517,9 @@ export class AdminDashboardService {
 				});
 			});
 
+			// Revenue by Room Type sheet
 			const roomTypeSheet = workbook.addWorksheet(
-				`Revenue by Room Type - ${key}`,
+				`Revenue by Room Type${filters.length > 1 ? ' - ' + rangeKey : ''}`,
 			);
 			roomTypeSheet.columns = [
 				{ header: 'Room Type', key: 'roomType', width: 30 },
@@ -524,6 +541,32 @@ export class AdminDashboardService {
 
 		await workbook.xlsx.write(res);
 		res.end();
+	}
+
+	private convertToDate(dateString: string): Date {
+		const formattedDate = dateString.replace(/\//g, '-');
+		const date = new Date(formattedDate);
+
+		if (isNaN(date.getTime())) {
+			throw new Error('Invalid date format');
+		}
+
+		return date;
+	}
+
+	private getRangeKey(
+		dateRange: { start: Date; end: Date },
+		dateRanges: { [key: string]: { start: Date; end: Date } },
+	) {
+		for (const [key, range] of Object.entries(dateRanges)) {
+			if (
+				range.start.getTime() === dateRange.start.getTime() &&
+				range.end.getTime() === dateRange.end.getTime()
+			) {
+				return key;
+			}
+		}
+		return 'Custom Range';
 	}
 
 	async getRoomCountByRoomType(): Promise<
