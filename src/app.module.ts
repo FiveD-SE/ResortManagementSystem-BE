@@ -24,6 +24,7 @@ import { RatingModule } from './modules/rating/rating.module';
 import { BookingModule } from './modules/booking/booking.module';
 import { InvoiceModule } from './modules/invoice/invoice.module';
 import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.module';
+import { RoomServiceModule } from './modules/roomService/roomService.module';
 @Module({
 	imports: [
 		ConfigModule.forRoot({
@@ -78,6 +79,7 @@ import { AdminDashboardModule } from './modules/admin-dashboard/admin-dashboard.
 		BookingModule,
 		InvoiceModule,
 		AdminDashboardModule,
+		RoomServiceModule,
 	],
 	controllers: [AppController],
 	providers: [
