@@ -10,7 +10,7 @@ import {
 	Query,
 	UseGuards,
 } from '@nestjs/common';
-import { ApiQuery } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery } from '@nestjs/swagger';
 
 import { ServiceService } from './service.service';
 import { CreateServiceRequestDto } from './dto/createService.request.dto';
@@ -89,5 +89,17 @@ export class ServiceController {
 	@Roles(UserRole.Admin)
 	remove(@Param('id') id: string): Promise<void> {
 		return this.serviceService.remove(id);
+	}
+
+	@Get('room-type/:roomTypeId')
+	@ApiOperation({
+		summary: 'Get all services by room type ID',
+	})
+	@ApiPaginationQuery()
+	async findAllByRoomType(
+		@Param('roomTypeId') roomTypeId: string,
+		@Query() query: PaginateParams,
+	): Promise<PaginateData<Service>> {
+		return this.serviceService.findAllByRoomType(roomTypeId, query);
 	}
 }

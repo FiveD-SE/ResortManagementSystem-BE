@@ -92,6 +92,20 @@ export class ServiceTypeService {
 		};
 	}
 
+	async findAllByRoomType(roomTypeId: string): Promise<ServiceType[]> {
+		if (!Types.ObjectId.isValid(roomTypeId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const roomType = await this.roomTypeService.findOne(roomTypeId);
+
+		if (!roomType) {
+			throw new NotFoundException(`RoomType with ID ${roomTypeId} not found`);
+		}
+
+		return this.serviceTypeModel.find({ roomTypeId }).exec();
+	}
+
 	async findOne(id: string): Promise<ServiceType> {
 		if (!Types.ObjectId.isValid(id)) {
 			throw new BadRequestException('Invalid ID format');
