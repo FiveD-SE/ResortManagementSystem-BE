@@ -13,18 +13,34 @@ import {
 	ServiceTypeDocument,
 } from './entities/serviceType.entity';
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
+import { RoomTypeService } from '../roomType/roomType.service';
 
 @Injectable()
 export class ServiceTypeService {
 	constructor(
 		@InjectModel(ServiceType.name)
 		private readonly serviceTypeModel: Model<ServiceTypeDocument>,
+		private readonly roomTypeService: RoomTypeService,
 	) {}
 
 	async create(
 		createServiceTypeDto: CreateServiceTypeRequestDto,
 	): Promise<ServiceType> {
 		try {
+			if (!Types.ObjectId.isValid(createServiceTypeDto.roomTypeId)) {
+				throw new BadRequestException('Invalid ID format');
+			}
+
+			const roomType = await this.roomTypeService.findOne(
+				createServiceTypeDto.roomTypeId,
+			);
+
+			if (!roomType) {
+				throw new NotFoundException(
+					`RoomType with ID ${createServiceTypeDto.roomTypeId} not found`,
+				);
+			}
+
 			const createdServiceType = new this.serviceTypeModel(
 				createServiceTypeDto,
 			);
@@ -94,6 +110,20 @@ export class ServiceTypeService {
 	): Promise<ServiceType> {
 		if (!Types.ObjectId.isValid(id)) {
 			throw new BadRequestException('Invalid ID format');
+		}
+
+		if (!Types.ObjectId.isValid(updateServiceTypeDto.roomTypeId)) {
+			throw new BadRequestException('Invalid ID format');
+		}
+
+		const roomType = await this.roomTypeService.findOne(
+			updateServiceTypeDto.roomTypeId,
+		);
+
+		if (!roomType) {
+			throw new NotFoundException(
+				`RoomType with ID ${updateServiceTypeDto.roomTypeId} not found`,
+			);
 		}
 
 		try {

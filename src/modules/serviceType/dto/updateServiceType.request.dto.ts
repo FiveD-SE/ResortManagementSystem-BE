@@ -10,4 +10,8 @@ export class UpdateServiceTypeRequestDto {
 	@IsString()
 	@MaxLength(500)
 	description?: string;
+
+	@IsOptional()
+	@IsString()
+	roomTypeId?: string;
 }

@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 
@@ -19,6 +19,9 @@ export class ServiceType extends BaseEntity {
 
 	@Prop({ maxlength: 500 })
 	description: string;
+
+	@Prop({ type: Types.ObjectId, ref: 'roomType' })
+	roomTypeId: Types.ObjectId;
 }
 
 export const ServiceTypeSchema = SchemaFactory.createForClass(ServiceType);
