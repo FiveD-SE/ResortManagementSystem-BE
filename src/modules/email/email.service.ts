@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as pdf from 'html-pdf';
+import * as puppeteer from 'puppeteer';
 
 import { EmailDataInterface } from './interfaces/emailData.interface';
 
@@ -156,36 +156,44 @@ export class EmailService {
 					.join('') || '',
 			);
 
-		const options: pdf.CreateOptions = {
-			format: 'A4' as const,
-			border: {
-				top: '20px',
-				right: '20px',
-				bottom: '20px',
-				left: '20px',
-			},
-			footer: {
-				height: '20mm',
-				contents: {
-					default:
-						'<div style="text-align: center; font-size: 12px;">Page {{page}} of {{pages}}</div>',
-				},
-			},
-			height: '297mm',
-			width: '210mm',
-			zoomFactor: '1',
-		};
-
 		const pdfPath = path.join(__dirname, 'invoice.pdf');
 
-		return new Promise((resolve, reject) => {
-			pdf.create(compiledHtml, options).toFile(pdfPath, (err, res) => {
-				if (err) {
-					reject(err);
-					return;
-				}
-				resolve(pdfPath);
-			});
+		// Launch Puppeteer with specific configurations for Docker
+		const browser = await puppeteer.launch({
+			headless: true, // Changed from 'new' to true
+			args: [
+				'--no-sandbox',
+				'--disable-setuid-sandbox',
+				'--disable-dev-shm-usage',
+				'--disable-gpu',
+			],
+			executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
 		});
+
+		try {
+			const page = await browser.newPage();
+			await page.setContent(compiledHtml, {
+				waitUntil: 'networkidle0',
+			});
+
+			await page.pdf({
+				path: pdfPath,
+				format: 'A4',
+				margin: {
+					top: '20px',
+					right: '20px',
+					bottom: '20px',
+					left: '20px',
+				},
+				displayHeaderFooter: true,
+				footerTemplate:
+					'<div style="text-align: center; font-size: 12px; width: 100%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span></div>',
+				headerTemplate: '<div></div>',
+			});
+
+			return pdfPath;
+		} finally {
+			await browser.close();
+		}
 	}
 }
