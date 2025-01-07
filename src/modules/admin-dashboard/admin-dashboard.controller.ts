@@ -120,14 +120,21 @@ export class AdminDashboardController {
 		},
 	})
 	async getRevenueByRoomType(
-		@Query('start') start?: Date,
-		@Query('end') end?: Date,
+		@Query('start') startString?: string,
+		@Query('end') endString?: string,
 	) {
 		const currentYear = new Date().getFullYear();
+
+		const start = startString
+			? new Date(startString)
+			: new Date(currentYear, 0, 1);
+		const end = endString ? new Date(endString) : new Date(currentYear, 11, 31);
+
 		const dateRange = {
-			start: start || new Date(currentYear, 0, 1),
-			end: end || new Date(currentYear, 11, 31),
+			start,
+			end,
 		};
+
 		return this.adminDashboardService.getRevenueByRoomType(dateRange);
 	}
 

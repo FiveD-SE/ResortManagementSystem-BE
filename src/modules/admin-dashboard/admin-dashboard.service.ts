@@ -50,7 +50,7 @@ export class AdminDashboardService {
 		return ((current - previous) / previous) * 100;
 	}
 
-	public async getInvoices(dateRange: { start: Date; end: Date }) {
+	private async getInvoices(dateRange: { start: Date; end: Date }) {
 		return this.invoiceModel
 			.find({
 				createdAt: {
@@ -285,7 +285,15 @@ export class AdminDashboardService {
 			},
 		];
 
-		return this.invoiceModel.aggregate(pipeline).exec();
+		console.log(
+			'Pipeline for getRevenueByRoomType:',
+			JSON.stringify(pipeline, null, 2),
+		);
+
+		const results = await this.invoiceModel.aggregate(pipeline).exec();
+		console.log('Results for getRevenueByRoomType:', results);
+
+		return results;
 	}
 
 	public async getRevenueByService(dateRange: { start: Date; end: Date }) {
@@ -296,40 +304,74 @@ export class AdminDashboardService {
 						$gte: dateRange.start,
 						$lt: dateRange.end,
 					},
+					bookingId: { $exists: true },
 				},
 			},
 			{
+				$addFields: {
+					bookingIdObj: { $toObjectId: '$bookingId' },
+				},
+			},
+			{
+				$lookup: {
+					from: 'bookings',
+					localField: 'bookingIdObj',
+					foreignField: '_id',
+					as: 'booking',
+				},
+			},
+			{
+				$unwind: '$booking',
+			},
+			{
 				$unwind: {
-					path: '$services',
+					path: '$booking.services',
 					preserveNullAndEmptyArrays: true,
+				},
+			},
+			{
+				$addFields: {
+					serviceIdObj: {
+						$toObjectId: '$booking.services.serviceId',
+					},
 				},
 			},
 			{
 				$lookup: {
 					from: 'services',
-					localField: 'services.serviceId',
+					localField: 'serviceIdObj',
 					foreignField: '_id',
-					as: 'serviceDetails',
+					as: 'service',
 				},
 			},
 			{
 				$unwind: {
-					path: '$serviceDetails',
+					path: '$service',
 					preserveNullAndEmptyArrays: true,
 				},
 			},
 			{
 				$group: {
-					_id: '$serviceDetails.serviceName',
+					_id: '$service.serviceName',
 					totalRevenue: {
 						$sum: {
 							$cond: {
-								if: { $gt: ['$services', null] },
-								then: { $multiply: ['$services.price', '$services.quantity'] },
+								if: { $gt: ['$booking.services', null] },
+								then: {
+									$multiply: [
+										'$booking.services.price',
+										'$booking.services.quantity',
+									],
+								},
 								else: 0,
 							},
 						},
 					},
+				},
+			},
+			{
+				$match: {
+					_id: { $ne: null },
 				},
 			},
 			{
@@ -346,7 +388,8 @@ export class AdminDashboardService {
 			},
 		];
 
-		return this.bookingModel.aggregate(pipeline).exec();
+		const results = await this.invoiceModel.aggregate(pipeline).exec();
+		return results;
 	}
 
 	public async getRevenueByServiceForLast5Years() {
@@ -442,96 +485,66 @@ export class AdminDashboardService {
 
 	async exportToExcel(start: string, end: string, res: Response) {
 		const workbook = new ExcelJS.Workbook();
-		const today = new Date();
-		const startOfToday = new Date(today.setHours(0, 0, 0, 0));
-		const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-		const startOfYear = new Date(today.getFullYear(), 0, 1);
+		const startDate = start ? new Date(start) : null;
+		const endDate = end ? new Date(end) : null;
 
-		const dateRanges = {
-			today: {
-				start: startOfToday,
-				end: new Date(startOfToday.getTime() + 24 * 60 * 60 * 1000),
-			},
-			thisMonth: {
-				start: startOfMonth,
-				end: new Date(startOfMonth.getTime() + 31 * 24 * 60 * 60 * 1000),
-			},
-			thisYear: {
-				start: startOfYear,
-				end: new Date(startOfYear.getTime() + 365 * 24 * 60 * 60 * 1000),
-			},
+		const dateRange = {
+			start: startDate || new Date(0), // Default to epoch if no start date
+			end: endDate || new Date(), // Default to now if no end date
 		};
 
-		const filters =
-			start && end
-				? [{ start: this.convertToDate(start), end: this.convertToDate(end) }]
-				: Object.values(dateRanges);
+		const invoices = await this.getInvoices(dateRange);
+		const revenueByService = await this.getRevenueByService(dateRange);
+		const revenueByRoomType = await this.getRevenueByRoomType(dateRange);
 
-		for (const dateRange of filters) {
-			const invoices = await this.getInvoices(dateRange);
-			const revenueByService = await this.getRevenueByService(dateRange);
-			const revenueByRoomType = await this.getRevenueByRoomType(dateRange);
-
-			const rangeKey =
-				filters.length > 1
-					? this.getRangeKey(dateRange, dateRanges)
-					: 'Custom Range';
-
-			// Invoices sheet
-			const invoiceSheet = workbook.addWorksheet(
-				`Invoices${filters.length > 1 ? ' - ' + rangeKey : ''}`,
-			);
-			invoiceSheet.columns = [
-				{ header: 'Invoice ID', key: 'id', width: 30 },
-				{ header: 'User ID', key: 'userId', width: 30 },
-				{ header: 'Amount', key: 'amount', width: 15 },
-				{ header: 'Description', key: 'description', width: 30 },
-				{ header: 'Status', key: 'status', width: 15 },
-				{ header: 'Issue Date', key: 'issueDate', width: 20 },
-				{ header: 'Due Date', key: 'dueDate', width: 20 },
-			];
-			invoices.forEach((invoice) => {
-				invoiceSheet.addRow({
-					id: invoice._id.toString(),
-					userId: invoice.userId.toString(),
-					amount: invoice.amount,
-					description: invoice.description,
-					status: invoice.status,
-					issueDate: invoice.issueDate,
-					dueDate: invoice.dueDate,
-				});
+		// Invoices sheet
+		const invoiceSheet = workbook.addWorksheet('Invoices');
+		invoiceSheet.columns = [
+			{ header: 'Invoice ID', key: 'id', width: 30 },
+			{ header: 'User ID', key: 'userId', width: 30 },
+			{ header: 'Amount', key: 'amount', width: 15 },
+			{ header: 'Description', key: 'description', width: 30 },
+			{ header: 'Status', key: 'status', width: 15 },
+			{ header: 'Issue Date', key: 'issueDate', width: 20 },
+			{ header: 'Due Date', key: 'dueDate', width: 20 },
+		];
+		invoices.forEach((invoice) => {
+			invoiceSheet.addRow({
+				id: invoice._id.toString(),
+				userId: invoice.userId.toString(),
+				amount: invoice.amount,
+				description: invoice.description,
+				status: invoice.status,
+				issueDate: invoice.issueDate,
+				dueDate: invoice.dueDate,
 			});
+		});
 
-			// Revenue by Service sheet
-			const serviceSheet = workbook.addWorksheet(
-				`Revenue by Service${filters.length > 1 ? ' - ' + rangeKey : ''}`,
-			);
-			serviceSheet.columns = [
-				{ header: 'Service Name', key: 'serviceName', width: 30 },
-				{ header: 'Revenue', key: 'revenue', width: 15 },
-			];
-			revenueByService.forEach((service) => {
-				serviceSheet.addRow({
-					serviceName: service.serviceName,
-					revenue: service.revenue,
-				});
+		// Revenue by Service sheet
+		const serviceSheet = workbook.addWorksheet('Revenue by Service');
+		serviceSheet.columns = [
+			{ header: 'Service Name', key: 'serviceName', width: 30 },
+			{ header: 'Revenue', key: 'revenue', width: 15 },
+		];
+		revenueByService.forEach((service) => {
+			serviceSheet.addRow({
+				serviceName: service.serviceName,
+				revenue: service.revenue,
 			});
+		});
 
-			// Revenue by Room Type sheet
-			const roomTypeSheet = workbook.addWorksheet(
-				`Revenue by Room Type${filters.length > 1 ? ' - ' + rangeKey : ''}`,
-			);
-			roomTypeSheet.columns = [
-				{ header: 'Room Type', key: 'roomType', width: 30 },
-				{ header: 'Revenue', key: 'revenue', width: 15 },
-			];
-			revenueByRoomType.forEach((roomType) => {
-				roomTypeSheet.addRow({
-					roomType: roomType.roomType,
-					revenue: roomType.revenue,
-				});
+		// Revenue by Room Type sheet
+		const roomTypeSheet = workbook.addWorksheet('Revenue by Room Type');
+		roomTypeSheet.columns = [
+			{ header: 'Room Type', key: 'roomType', width: 30 },
+			{ header: 'Revenue', key: 'revenue', width: 15 },
+		];
+		revenueByRoomType.forEach((roomType) => {
+			roomTypeSheet.addRow({
+				roomType: roomType.roomType,
+				revenue: roomType.revenue,
 			});
-		}
+		});
 
 		res.setHeader(
 			'Content-Type',
