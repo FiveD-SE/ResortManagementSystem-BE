@@ -116,7 +116,7 @@ export class BookingService {
 		roomId: string,
 		userId: string,
 		dto: CreateBookingDTO,
-	): Promise<Booking> {
+	): Promise<Booking | { booking: Booking; invoice: Invoice }> {
 		const room = await this.roomService.findOne(roomId);
 
 		if (dto.checkinDate >= dto.checkoutDate) {
@@ -217,6 +217,11 @@ export class BookingService {
 			await this.createTransferInvoice(booking._id.toString());
 		}
 
+		// return booking and invoice if payment method is transfer
+		if (dto.paymentMethod === 'Transfer') {
+			const invoice = await this.createTransferInvoice(booking._id.toString());
+			return { booking, invoice };
+		}
 		return booking;
 	}
 
