@@ -9,6 +9,7 @@ import {
 	Query,
 	Patch,
 	BadRequestException,
+	Delete,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 
@@ -25,6 +26,8 @@ import { Invoice } from '../invoice/entities/invoice.entity';
 import { RequestWithUser } from '@/types/request.type';
 import { BookingServiceDTO } from './dto/bookingService.dto';
 import { BookingServicesDTO } from './dto/bookingServices.dto';
+import { BookingRoomServicesDTO } from './dto/bookingRoomServices.dto';
+import { UpdateRoomServicesDTO } from './dto/updateRoomServices.dto';
 
 @Controller('bookings')
 @UseGuards(JwtAccessTokenGuard, RolesGuard)
@@ -179,6 +182,49 @@ export class BookingController {
 		return this.bookingService.addServicesToBooking(
 			bookingId,
 			bookingServicesDTO.servicesWithQuantities,
+		);
+	}
+
+	@Post(':bookingId/room-services')
+	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@ApiOperation({ summary: 'Add multiple room services to a booking' })
+	@ApiBody({ type: BookingRoomServicesDTO })
+	async addRoomServicesToBooking(
+		@Param('bookingId') bookingId: string,
+		@Body() bookingRoomServicesDTO: BookingRoomServicesDTO,
+	): Promise<Booking> {
+		return this.bookingService.addRoomServicesToBooking(
+			bookingId,
+			bookingRoomServicesDTO.roomServicesWithQuantities,
+		);
+	}
+
+	@Patch(':bookingId/room-services')
+	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@ApiOperation({
+		summary: 'Update multiple room service quantities in a booking',
+	})
+	@ApiBody({ type: UpdateRoomServicesDTO })
+	async updateRoomServicesInBooking(
+		@Param('bookingId') bookingId: string,
+		@Body() updateRoomServicesDTO: UpdateRoomServicesDTO,
+	): Promise<Booking> {
+		return this.bookingService.updateRoomServicesInBooking(
+			bookingId,
+			updateRoomServicesDTO.roomServices,
+		);
+	}
+
+	@Delete(':bookingId/room-services/:roomServiceId')
+	@Roles(UserRole.Admin, UserRole.Receptionist)
+	@ApiOperation({ summary: 'Remove a room service from a booking' })
+	async removeRoomServiceFromBooking(
+		@Param('bookingId') bookingId: string,
+		@Param('roomServiceId') roomServiceId: string,
+	): Promise<Booking> {
+		return this.bookingService.removeRoomServiceFromBooking(
+			bookingId,
+			roomServiceId,
 		);
 	}
 

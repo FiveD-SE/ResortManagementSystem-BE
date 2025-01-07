@@ -12,6 +12,7 @@ import { EmailModule } from '../email/email.module';
 import { UserModule } from '../user/user.module';
 import { ServiceTypeModule } from '../serviceType/serviceType.module';
 import { RoomTypeModule } from '../roomType/roomType.module';
+import { RoomServiceModule } from '../roomService/roomService.module';
 
 @Module({
 	imports: [
@@ -24,6 +25,7 @@ import { RoomTypeModule } from '../roomType/roomType.module';
 		UserModule,
 		ServiceTypeModule,
 		RoomTypeModule,
+		RoomServiceModule,
 	],
 	controllers: [BookingController],
 	providers: [BookingService],
