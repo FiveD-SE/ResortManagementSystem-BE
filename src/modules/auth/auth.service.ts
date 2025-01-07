@@ -200,16 +200,29 @@ export class AuthService {
 		await this.tokenService.deleteToken(user.id, TokenType.ResetPassword);
 	}
 
-	async verifyAccount(dto: VerifyAccountRequestDTO): Promise<void> {
-		const decoded = await this.jwtService.decode(dto.token);
+	async verifyAccount(token: string): Promise<void> {
+		const decoded = (await this.jwtService.decode(
+			token,
+		)) as VerifyAccountTokenPayload;
+
+		if (!decoded) {
+			throw new BadRequestException('Invalid token');
+		}
+
+		console.log(decoded); // Kiểm tra dữ liệu của token
+
 		const user = await this.userService.getUser(decoded.email);
 
+		if (!user) {
+			throw new BadRequestException('User not found');
+		}
+
 		if (user.isVerified) {
-			throw new BadRequestException('Account already verifed');
+			throw new BadRequestException('Account already verified');
 		}
 
 		const isValidToken = await this.tokenService.verifyJwtWithSecret(
-			dto.token,
+			token,
 			user.password + user.isVerified,
 		);
 
@@ -219,7 +232,6 @@ export class AuthService {
 
 		await this.userService.update(user.id, { isVerified: true });
 	}
-
 	async sendVerificationEmail(email: string): Promise<void> {
 		const user = await this.userService.getUser(email);
 

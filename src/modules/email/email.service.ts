@@ -46,7 +46,7 @@ export class EmailService {
 		firstName: string,
 		token: string,
 	): Promise<void> {
-		const verificationEmailUrl = `${this.configService.get<string>('FRONTEND_URL')}/verify-email?token=${token}`;
+		const verificationEmailUrl = `${this.configService.get<string>('SERVER_URL')}/auth/verify-account?token=${token}`;
 		await this.sendEmail({
 			to: email,
 			subject: 'Verify your account',

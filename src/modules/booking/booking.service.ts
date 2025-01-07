@@ -214,14 +214,10 @@ export class BookingService {
 		});
 
 		if (dto.paymentMethod === 'Transfer') {
-			await this.createTransferInvoice(booking._id.toString());
-		}
-
-		// return booking and invoice if payment method is transfer
-		if (dto.paymentMethod === 'Transfer') {
 			const invoice = await this.createTransferInvoice(booking._id.toString());
 			return { booking, invoice };
 		}
+
 		return booking;
 	}
 
