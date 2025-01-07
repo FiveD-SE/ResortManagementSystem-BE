@@ -54,9 +54,10 @@ export class BookingService {
 
 		const room = booking.roomId as unknown as Room;
 
-		const totalNight =
+		const totalNight = Math.ceil(
 			(booking.checkoutDate.getTime() - booking.checkinDate.getTime()) /
-			(1000 * 60 * 60 * 24);
+				(1000 * 60 * 60 * 24),
+		);
 		const items = [
 			{
 				name: room.roomNumber,
@@ -140,9 +141,10 @@ export class BookingService {
 			);
 		}
 
-		const totalNight =
+		const totalNight = Math.ceil(
 			(dto.checkoutDate.getTime() - dto.checkinDate.getTime()) /
-			(1000 * 60 * 60 * 24);
+				(1000 * 60 * 60 * 24),
+		);
 		let totalAmount = room.pricePerNight * totalNight;
 
 		let promotionId = null;
@@ -353,9 +355,10 @@ export class BookingService {
 
 		const room = booking.roomId as unknown as Room;
 
-		const totalNight =
+		const totalNight = Math.ceil(
 			(booking.checkoutDate.getTime() - booking.checkinDate.getTime()) /
-			(1000 * 60 * 60 * 24);
+				(1000 * 60 * 60 * 24),
+		);
 
 		const items = [
 			{
