@@ -187,7 +187,9 @@ export class BookingController {
 
 	@Post(':bookingId/room-services')
 	@Roles(UserRole.Admin, UserRole.Receptionist)
-	@ApiOperation({ summary: 'Add multiple room services to a booking' })
+	@ApiOperation({
+		summary: 'Add or update multiple room services in a booking',
+	})
 	@ApiBody({ type: BookingRoomServicesDTO })
 	async addRoomServicesToBooking(
 		@Param('bookingId') bookingId: string,

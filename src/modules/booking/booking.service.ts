@@ -489,7 +489,17 @@ export class BookingService {
 			throw new NotFoundException('One or more room services not found');
 		}
 
+		booking.roomServices.forEach((service) => {
+			booking.totalAmount -= service.price * service.quantity;
+		});
+
+		booking.roomServices = [];
+
 		for (const { roomServiceId, quantity } of roomServicesWithQuantities) {
+			if (isNaN(quantity) || quantity <= 0) {
+				throw new BadRequestException('Quantity must be a positive number');
+			}
+
 			const roomService = roomServices.find((s) => s.id === roomServiceId);
 			if (!roomService) {
 				throw new NotFoundException(
@@ -497,22 +507,17 @@ export class BookingService {
 				);
 			}
 
-			const existingService = booking.roomServices.find(
-				(s) => s.roomServiceId.toString() === roomServiceId,
-			);
-
-			if (existingService) {
-				existingService.quantity += quantity;
-			} else {
-				booking.roomServices.push({
-					roomServiceId: new Types.ObjectId(roomServiceId),
-					price: roomService.price,
-					quantity,
-					name: roomService.serviceName,
-				});
-			}
-
+			booking.roomServices.push({
+				roomServiceId: new Types.ObjectId(roomServiceId),
+				price: roomService.price,
+				quantity,
+				name: roomService.serviceName,
+			});
 			booking.totalAmount += roomService.price * quantity;
+		}
+
+		if (isNaN(booking.totalAmount)) {
+			throw new BadRequestException('Total amount calculation resulted in NaN');
 		}
 
 		await booking.save();
