@@ -6,6 +6,8 @@ import {
 	Res,
 	UseGuards,
 	UseInterceptors,
+	Param,
+	Query,
 } from '@nestjs/common';
 import { ApiBody, ApiOkResponse } from '@nestjs/swagger';
 import { AuthGuard } from '@nestjs/passport';
@@ -134,9 +136,11 @@ export class AuthController {
 		return await this.authService.changePassword(req.user._id.toString(), dto);
 	}
 
-	@ApiPost({ path: 'verify-account' })
-	async verifyAccount(@Body() dto: VerifyAccountRequestDTO) {
-		return await this.authService.verifyAccount(dto);
+	@Get('verify-account')
+	async verifyAccount(@Query('token') token: string, @Res() res: Response) {
+		await this.authService.verifyAccount(token);
+
+		res.redirect(this.configService.get<string>('FRONTEND_URL'));
 	}
 
 	@ApiPost({ path: '/email/forgot-password' })
