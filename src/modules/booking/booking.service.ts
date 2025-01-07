@@ -29,6 +29,7 @@ import { EmailService } from '../email/email.service';
 import { UserService } from '../user/user.service';
 import { BookingServiceDTO } from './dto/bookingService.dto';
 import { User, UserRole } from '../user/entities/user.entity';
+import { RoomServiceService } from '../roomService/roomService.service';
 
 @Injectable()
 export class BookingService {
@@ -45,6 +46,7 @@ export class BookingService {
 		private readonly userService: UserService,
 		private readonly serviceTypeService: ServiceTypeService,
 		private readonly roomTypeService: RoomTypeService,
+		private readonly roomServiceService: RoomServiceService,
 	) {}
 
 	private async createTransferInvoice(bookingId: string) {
@@ -371,6 +373,11 @@ export class BookingService {
 				quantity: service.quantity,
 				price: service.price,
 			})),
+			...booking.roomServices.map((service) => ({
+				name: service.name,
+				quantity: service.quantity,
+				price: service.price,
+			})),
 		];
 
 		const createInvoiceDto: CreateInvoiceDto = {
@@ -453,6 +460,137 @@ export class BookingService {
 		}
 
 		booking.totalAmount += service.price * quantity;
+		await booking.save();
+
+		return booking;
+	}
+
+	async addRoomServicesToBooking(
+		bookingId: string,
+		roomServicesWithQuantities: { roomServiceId: string; quantity: number }[],
+	): Promise<Booking> {
+		const booking = await this.bookingModel.findById(bookingId).exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		const roomServiceIds = roomServicesWithQuantities.map(
+			(s) => s.roomServiceId,
+		);
+		const roomServices =
+			await this.roomServiceService.findByIds(roomServiceIds);
+		if (roomServices.length !== roomServiceIds.length) {
+			throw new NotFoundException('One or more room services not found');
+		}
+
+		for (const { roomServiceId, quantity } of roomServicesWithQuantities) {
+			const roomService = roomServices.find((s) => s.id === roomServiceId);
+			if (!roomService) {
+				throw new NotFoundException(
+					`Room service with ID ${roomServiceId} not found`,
+				);
+			}
+
+			const existingService = booking.roomServices.find(
+				(s) => s.roomServiceId.toString() === roomServiceId,
+			);
+
+			if (existingService) {
+				existingService.quantity += quantity;
+			} else {
+				booking.roomServices.push({
+					roomServiceId: new Types.ObjectId(roomServiceId),
+					price: roomService.price,
+					quantity,
+					name: roomService.serviceName,
+				});
+			}
+
+			booking.totalAmount += roomService.price * quantity;
+		}
+
+		await booking.save();
+
+		return booking;
+	}
+
+	async updateRoomServicesInBooking(
+		bookingId: string,
+		roomServices: { roomServiceId: string; quantity: number }[],
+	): Promise<Booking> {
+		const booking = await this.bookingModel.findById(bookingId).exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		for (const { roomServiceId, quantity } of roomServices) {
+			if (isNaN(quantity) || quantity <= 0) {
+				throw new BadRequestException('Quantity must be a positive number');
+			}
+
+			const roomService = await this.roomServiceService.findOne(roomServiceId);
+			if (!roomService) {
+				throw new NotFoundException(
+					`Room service with ID ${roomServiceId} not found`,
+				);
+			}
+
+			const existingService = booking.roomServices.find(
+				(s) => s.roomServiceId.toString() === roomServiceId,
+			);
+
+			if (!existingService) {
+				throw new NotFoundException(
+					`Room service with ID ${roomServiceId} not found in booking`,
+				);
+			}
+
+			booking.totalAmount -= existingService.price * existingService.quantity;
+			existingService.quantity = quantity;
+			booking.totalAmount += existingService.price * quantity;
+
+			if (isNaN(booking.totalAmount)) {
+				throw new BadRequestException(
+					'Total amount calculation resulted in NaN',
+				);
+			}
+		}
+
+		await booking.save();
+
+		return booking;
+	}
+
+	async removeRoomServiceFromBooking(
+		bookingId: string,
+		roomServiceId: string,
+	): Promise<Booking> {
+		const booking = await this.bookingModel.findById(bookingId).exec();
+
+		if (!booking) {
+			throw new NotFoundException(`Booking with ID ${bookingId} not found`);
+		}
+
+		const roomServiceIndex = booking.roomServices.findIndex(
+			(s) => s.roomServiceId.toString() === roomServiceId,
+		);
+
+		if (roomServiceIndex === -1) {
+			throw new NotFoundException(
+				`Room service with ID ${roomServiceId} not found in booking`,
+			);
+		}
+
+		const roomService = booking.roomServices[roomServiceIndex];
+		booking.totalAmount -= roomService.price * roomService.quantity;
+		booking.roomServices.splice(roomServiceIndex, 1);
+
+		if (isNaN(booking.totalAmount)) {
+			throw new BadRequestException('Total amount calculation resulted in NaN');
+		}
+
 		await booking.save();
 
 		return booking;

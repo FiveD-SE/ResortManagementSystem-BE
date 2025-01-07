@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+
 import { PaginateData, PaginateParams, SortOrder } from '@/types/common.type';
 import { RoomService } from './entities/roomService.entity';
 import { CreateRoomServiceRequestDto } from './dto/createRoomService.request.dto';
@@ -121,5 +122,9 @@ export class RoomServiceService {
 		if (!result) {
 			throw new NotFoundException(`Service with ID ${id} not found`);
 		}
+	}
+
+	async findByIds(ids: string[]): Promise<RoomService[]> {
+		return this.serviceModel.find({ _id: { $in: ids } }).exec();
 	}
 }

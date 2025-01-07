@@ -3,6 +3,10 @@ import { HydratedDocument, Types } from 'mongoose';
 
 import { BaseEntity } from '@/modules/shared/base/base.entity';
 import { BookingService, BookingServiceSchema } from './booking-service.entity';
+import {
+	BookingRoomService,
+	BookingRoomServiceSchema,
+} from './booking-roomService.entity';
 
 export type BookingDocument = HydratedDocument<Booking>;
 
@@ -43,6 +47,9 @@ export class Booking extends BaseEntity {
 
 	@Prop({ type: [BookingServiceSchema] })
 	services: BookingService[];
+
+	@Prop({ type: [BookingRoomServiceSchema] })
+	roomServices: BookingRoomService[];
 
 	@Prop({ type: Types.ObjectId, ref: 'Promotion' })
 	promotionId: Types.ObjectId;
