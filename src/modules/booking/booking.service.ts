@@ -414,7 +414,7 @@ export class BookingService {
 			customer.firstName,
 			items.map((item) => ({
 				name: item.name,
-				price: item.price * item.quantity,
+				price: item.price,
 				quantity: item.quantity,
 			})),
 			invoice.checkoutUrl,
